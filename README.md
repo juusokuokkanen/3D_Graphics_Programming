@@ -1,2 +1,2 @@
 # 3D_Graphics_Programming
-3D Graphics Programming courses assingment repo - Author: Juuso Kuokkanen
+3D Graphics Programming courses assignment repo - Author: Juuso Kuokkanen
