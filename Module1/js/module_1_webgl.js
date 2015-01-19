@@ -87,7 +87,7 @@ function drawScene(){
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
     //Draw the buffers, tell how to draw the data, where to start and how many vertices we should draw in total.
-    gl.drawArrays(gl.LINE_LOOP, 0, 3);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
 function initWebGL(){
@@ -106,6 +106,8 @@ function initWebGL(){
         //clear the scene with color set
         gl.clearColor(1.0, 0.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
+        //gl.viewport(canvas.width/2, canvas.height/2, canvas.width, canvas.height);
+        gl.viewport(0, 0, canvas.width, canvas.height);
         
         initShaders();
         initBuffers();
