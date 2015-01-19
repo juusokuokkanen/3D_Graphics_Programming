@@ -10,6 +10,9 @@ var gl = null;
 var canvas = null;
 var vertexShaderCode = null;
 var fragmentShaderCode = null;
+var program = null;
+var drawBuffer = null;
+var vertexPosAttr = null;
 window.onload = initWebGL();
 
 
@@ -37,7 +40,7 @@ function initShaders(){
 
         fragmentShaderCode = [
             "void main(void){",
-                "gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);",
+                "gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);",
             "}"
         ].join("\n");
         
@@ -48,16 +51,43 @@ function initShaders(){
     var fragmentShader = makeShaderProgram(fragmentShaderCode, gl.FRAGMENT_SHADER);
     
     if(vertexShader !== null && fragmentShader !== null){
-        var program = gl.createProgram();
-        gl.attachShader(vertexShader);
-        gl.attachShader(vertexShader);
+        program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
         gl.linkProgram(program);
-        if(!gl.getProgramParameter(program, gl.LINK_STATUS)){
+        if(gl.getProgramParameter(program, gl.LINK_STATUS)){
             gl.useProgram(program);
         }else{
             alert("Linking the program did not went correctly.");
         }
     }
+}
+
+function initBuffers(){
+    var data = [
+        -0.5, -0.5, 0.0,
+        0.0, 0.5, 0.0,
+        0.5, -0.5, 0.0
+    ];
+    //create new VBO
+    drawBuffer = gl.createBuffer();
+    //Bind the created VBO
+    gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
+    //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+}
+
+function drawScene(){
+    //get reference to attribute variable in vertex shader
+    vertexPosAttr = gl.getAttribLocation(program, "aVertexPos");
+    //Enable feeding of array of data to attribute
+    gl.enableVertexAttribArray(vertexPosAttr);
+    //Bind the buffer that data we want to give to drawing
+    gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
+    //We tell the WebGL how to interpret the data in bind buffers
+    gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
+    //Draw the buffers, tell how to draw the data, where to start and how many vertices we should draw in total.
+    gl.drawArrays(gl.LINE_LOOP, 0, 3);
 }
 
 function initWebGL(){
@@ -78,6 +108,8 @@ function initWebGL(){
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         initShaders();
+        initBuffers();
+        drawScene();
         
         
     }else{
