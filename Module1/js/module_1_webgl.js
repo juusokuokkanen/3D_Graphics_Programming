@@ -12,7 +12,10 @@ var vertexShaderCode = null;
 var fragmentShaderCode = null;
 var program = null;
 var drawBuffer = null;
+var colorBuffer = null;
 var vertexPosAttr = null;
+var vertexColAttr = null;
+var angle = 0.0;
 window.onload = initWebGL();
 
 
@@ -33,14 +36,19 @@ function initShaders(){
     if(vertexShaderCode === null || fragmentShaderCode === null){
         vertexShaderCode = [
             "attribute vec3 aVertexPos;",
+            "attribute vec3 aVertexCol;",
+            
+            "varying highp vec4 vColor;",
             "void main(void){",
                 "gl_Position = vec4(aVertexPos, 1.0);",
+                "vColor = vec4(aVertexCol, 1.0);",
             "}"
         ].join("\n");
 
         fragmentShaderCode = [
+           "varying highp vec4 vColor;",
             "void main(void){",
-                "gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);",
+                "gl_FragColor = vColor;",
             "}"
         ].join("\n");
         
@@ -64,7 +72,7 @@ function initShaders(){
 }
 
 function initBuffers(){
-    var data = [
+    var vertexData = [
         -0.5, -0.5, 0.0,
         0.0, 0.5, 0.0,
         0.5, -0.5, 0.0
@@ -74,7 +82,33 @@ function initBuffers(){
     //Bind the created VBO
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
+    
+    var colorData = [
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0,
+        1.0, 1.0, 0.0
+    ];
+    
+    colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
+}
+
+function setDynamicBuffer(){
+    var translation = Math.sin(angle)/2.0;
+    var vertexData = [
+        -0.5 + translation, -0.5, 0.0,
+        0.0 + translation, 0.5, 0.0,
+        0.5 + translation, -0.5, 0.0
+    ];
+    //create new VBO
+    drawBuffer = gl.createBuffer();
+    //Bind the created VBO
+    gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
+    //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.DYNAMIC_DRAW);
+    angle += 0.01;
 }
 
 function drawScene(){
@@ -86,6 +120,12 @@ function drawScene(){
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
+    
+    //Attach a color attribute for vertices
+    vertexColAttr = gl.getAttribLocation(program, "aVertexCol");
+    gl.enableVertexAttribArray(vertexColAttr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.vertexAttribPointer(vertexColAttr, 3, gl.FLOAT, false, 0, 0);
     //Draw the buffers, tell how to draw the data, where to start and how many vertices we should draw in total.
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
@@ -112,6 +152,16 @@ function initWebGL(){
         initShaders();
         initBuffers();
         drawScene();
+        
+        (function animLoop(){
+            gl.clearColor(1.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            //gl.viewport(canvas.width/2, canvas.height/2, canvas.width, canvas.height);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            setDynamicBuffer();
+            drawScene();
+            requestAnimationFrame(animLoop, canvas);
+         })();
         
         
     }else{
