@@ -24,7 +24,7 @@ function startThree(){
     
     
    //Initializr quad and clear color
-    var quadColor = new THREE.Color(0x00FF00);
+    var quadColor = new THREE.Color(0xFF0000);
     var clearColor = new THREE.Color();
     clearColor.setRGB(0.0, 0.0, 1.0);
     
