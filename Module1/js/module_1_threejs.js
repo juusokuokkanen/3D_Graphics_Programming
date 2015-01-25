@@ -39,11 +39,24 @@ function startThree(){
     quad.vertices.push(new THREE.Vector3(-5, 5, 0));
     quad.vertices.push(new THREE.Vector3(5, 5, 0));
 
+    var material = new THREE.MeshBasicMaterial({
+        //color: triangleColor
+        vertexColors: THREE.VertexColors
+    });
+
     quad.faces.push(new THREE.Face3(0, 1, 2), new THREE.Face3(2, 1, 3));
+    
+    quad.faces[0].vertexColors.push(new THREE.Color(0x00FF00));
+    quad.faces[0].vertexColors.push(new THREE.Color(0xFF0000));
+    quad.faces[0].vertexColors.push(new THREE.Color(0xFFFF00));
+    quad.faces[1].vertexColors.push(new THREE.Color(0xFFFF00));
+    quad.faces[1].vertexColors.push(new THREE.Color(0xFF0000));
+    quad.faces[1].vertexColors.push(new THREE.Color(0x00FF00));
 
     //set quad material with quadColor (green)
     var material = new THREE.MeshBasicMaterial({
-        color: quadColor
+        //color: quadColor
+        vertexColors: THREE.VertexColors
     });
     
     //create mesh from quad geometry and material
