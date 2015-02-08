@@ -12,10 +12,11 @@ var vertexShaderCode = null;
 var fragmentShaderCode = null;
 var program = null;
 var drawBuffer = null;
-var vertexIndices = null;
-var indexBufferObject = null;
+var vertexAngleBuffer = null;
+var indexBufferObjectTri = null;
+var indexBufferObjectLine = null;
 var vertexPosAttr = null;
-var vertexIndexAttr = null;
+var vertexAngleAttr = null;
 var vertexCountUniform = null;
 var radiusUniform = null;
 window.onload = initWebGL();
@@ -38,8 +39,24 @@ function initShaders(){
     if(vertexShaderCode === null || fragmentShaderCode === null){
         vertexShaderCode = [
             "attribute vec3 aVertexPos;",
+            "attribute float aVertexAngle;",
+            
+            "vec4 transform(float radius){",
+                "vec4 resultVec = vec4(aVertexPos, 1.0);",
+                "if(aVertexAngle == -9999.9){",
+                    "return resultVec;",
+                "} else{",
+                    "resultVec.x = cos(aVertexAngle);",
+                    "resultVec.y = sin(aVertexAngle);",
+                    "resultVec.xyz = resultVec.xyz * radius;",
+                    "return resultVec;",
+                "}",
+            "}",
+            
             "void main(void){",
-                "gl_Position = vec4(aVertexPos, 1.0);",
+                "vec4 transformedVector = transform(0.6);",
+                "gl_PointSize = 4.0;",
+                "gl_Position = transformedVector;",
             "}"
         ].join("\n");
 
@@ -70,9 +87,22 @@ function initShaders(){
 
 function initBuffers(){
     var data = [
-        -0.5, -0.5, 0.0,
-        0.0, 0.5, 0.0,
-        0.5, -0.5, 0.0
+        0.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0
     ];
     //create new VBO
     drawBuffer = gl.createBuffer();
@@ -80,15 +110,61 @@ function initBuffers(){
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    drawBuffer.itemCount = data.length;
     
     //create index buffer object
     var indexBufferObjectData = [
-        0, 1, 2
+        0, 1, 2,
+        0, 2, 3,
+        0, 3, 4,
+        0, 4, 5,
+        0, 5, 6,
+        0, 6, 7,
+        0, 7, 8,
+        0, 8, 9,
+        0, 9, 10,
+        0, 10, 11,
+        0, 11, 12,
+        0, 12, 13,
+        0, 13, 14,
+        0, 14, 15,
+        0, 15, 1,
     ];
-    indexBufferObject = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObject);
+    
+    indexBufferObjectTri = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBufferObjectData), gl.STATIC_DRAW);
-    indexBufferObject.itemCount = indexBufferObjectData.length;
+    indexBufferObjectTri.itemCount = indexBufferObjectData.length;
+    
+    //create index buffer object
+    indexBufferObjectData = [
+        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+    ];
+    
+    indexBufferObjectPL = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBufferObjectData), gl.STATIC_DRAW);
+    indexBufferObjectPL.itemCount = indexBufferObjectData.length;
+    
+    //create angle data based on number of vertices. First always 0.0, because it should be the center of circle.
+    var vertexAngleData = [
+        -9999.9
+    ];
+    
+    for(var i = 1; i < drawBuffer.itemCount/3; i++){
+        //angle is determined by number of vertices in cirlces ring (we exclude the center)
+        //and create angle for every vertex
+        var angle = (2.0*Math.PI/(drawBuffer.itemCount/3-1))*(i-1);
+        vertexAngleData.push(angle);
+    }
+    
+    //create new VBO
+    vertexAngleBuffer = gl.createBuffer();
+    //Bind the created VBO
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexAngleBuffer);
+    //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexAngleData), gl.STATIC_DRAW);
+    vertexAngleBuffer.itemCount = vertexAngleData.length;
 }
 
 function drawScene(){
@@ -101,9 +177,18 @@ function drawScene(){
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
     
+    //get reference to attribute variable in vertex shader
+    vertexAngleAttr = gl.getAttribLocation(program, "aVertexAngle");
+    //Enable feeding of array of data to attribute
+    gl.enableVertexAttribArray(vertexAngleAttr);
+    //Bind the buffer that data we want to give to drawing
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexAngleBuffer);
+    //We tell the WebGL how to interpret the data in bind buffers
+    gl.vertexAttribPointer(vertexAngleAttr, 1, gl.FLOAT, false, 0, 0);
+    
     //draw by using the indices
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObject);
-    gl.drawElements(gl.TRIANGLES, indexBufferObject.itemCount, gl.UNSIGNED_SHORT, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
+    gl.drawElements(gl.POINTS, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
 }
 
 function initWebGL(){
