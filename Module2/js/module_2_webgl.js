@@ -40,29 +40,32 @@ function initShaders(){
         vertexShaderCode = [
             "attribute vec3 aVertexPos;",
             "attribute float aVertexAngle;",
-            
+            "varying highp float vAngle;",
             "vec4 transform(float radius){",
                 "vec4 resultVec = vec4(aVertexPos, 1.0);",
-                "if(aVertexAngle == -9999.9){",
-                    "return resultVec;",
-                "} else{",
-                    "resultVec.x = cos(aVertexAngle);",
-                    "resultVec.y = sin(aVertexAngle);",
-                    "resultVec.xyz = resultVec.xyz * radius;",
-                    "return resultVec;",
-                "}",
+                "resultVec.x = cos(aVertexAngle);",
+                "resultVec.y = sin(aVertexAngle);",
+                "resultVec.xyz = resultVec.xyz * radius;",
+                "return resultVec;",
             "}",
             
             "void main(void){",
                 "vec4 transformedVector = transform(0.6);",
                 "gl_PointSize = 4.0;",
                 "gl_Position = transformedVector;",
+                "vAngle = aVertexAngle;",
             "}"
         ].join("\n");
 
         fragmentShaderCode = [
+            "precision highp float;",
+            "varying mediump float vAngle;",
+            "vec4 color(float angle){",
+                "vec4 color = vec4(cos(vAngle), sin(vAngle), 0.0, 1.0);",
+                "return color;",
+            "}",
             "void main(void){",
-                "gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);",
+                "gl_FragColor = color(vAngle);",
             "}"
         ].join("\n");
         
@@ -148,7 +151,7 @@ function initBuffers(){
     
     //create angle data based on number of vertices. First always 0.0, because it should be the center of circle.
     var vertexAngleData = [
-        -9999.9
+        0.0
     ];
     
     for(var i = 1; i < drawBuffer.itemCount/3; i++){
@@ -187,8 +190,8 @@ function drawScene(){
     gl.vertexAttribPointer(vertexAngleAttr, 1, gl.FLOAT, false, 0, 0);
     
     //draw by using the indices
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
-    gl.drawElements(gl.POINTS, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
+    gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
 }
 
 function initWebGL(){
@@ -205,7 +208,7 @@ function initWebGL(){
     if(gl){
         //we can access the webgl functionalities by using gl, that contains the context
         //clear the scene with color set
-        gl.clearColor(1.0, 0.0, 0.0, 1.0);
+        gl.clearColor(0.1, 0.1, 0.1, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         
         initShaders();
