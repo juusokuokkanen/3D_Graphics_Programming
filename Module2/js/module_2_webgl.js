@@ -61,7 +61,7 @@ function initShaders(){
             "precision highp float;",
             "varying mediump float vAngle;",
             "vec4 color(float angle){",
-                "vec4 color = vec4(cos(vAngle), sin(vAngle), 0.0, 1.0);",
+                "vec4 color = vec4(smoothstep(-1.0, 1.0, sin(vAngle)), smoothstep(-1.0, 1.0, cos(vAngle)), 0.0, 1.0);",
                 "return color;",
             "}",
             "void main(void){",
@@ -190,8 +190,21 @@ function drawScene(){
     gl.vertexAttribPointer(vertexAngleAttr, 1, gl.FLOAT, false, 0, 0);
     
     //draw by using the indices
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
-    gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
+    if(selectedButton==="1"){
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
+        gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
+    }
+    //draw by using the indices
+    if(selectedButton==="2"){
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
+        gl.drawElements(gl.LINE_LOOP, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
+    }
+    //draw by using the indices
+    if(selectedButton==="3"){
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
+        gl.drawElements(gl.POINTS, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
+    }
+    
 }
 
 function initWebGL(){

@@ -8,9 +8,22 @@ and open the template in the editor.
     <head>
         <title>Module 1 - WebGL version</title>
         <meta charset="UTF-8">
+        <script src="js/jquery-1.11.2.js"></script>
     </head>
     <body>
+        <form id="selectorForm">
+            <input type="radio" name="primitive" value="1" checked="checked">Polygon<br>
+            <input type="radio" name="primitive" value="2">Line loop<br>
+            <input type="radio" name="primitive" value="3">Points<br>
+        </form>
         <canvas id="canvas-webgl" width="400" height="300">Browser not supporting HTML5 canvas element</canvas>
+        <script>
+            var selectedButton = 1;
+            $('#selectorForm input').on("change", function(){
+                selectedButton = $("input[name=primitive]:checked", "#selectorForm").val();
+                drawScene();
+            });
+        </script>
         <script src="js/module_2_webgl.js"></script>
     </body>
 </html>
