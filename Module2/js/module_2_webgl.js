@@ -38,6 +38,7 @@ function makeShaderProgram(source, type){
 function initShaders(){
     if(vertexShaderCode === null || fragmentShaderCode === null){
         vertexShaderCode = [
+            "uniform float uRadius;",
             "attribute vec3 aVertexPos;",
             "attribute float aVertexAngle;",
             "varying highp float vAngle;",
@@ -50,7 +51,7 @@ function initShaders(){
             "}",
             
             "void main(void){",
-                "vec4 transformedVector = transform(0.6);",
+                "vec4 transformedVector = transform(uRadius);",
                 "gl_PointSize = 4.0;",
                 "gl_Position = transformedVector;",
                 "vAngle = aVertexAngle;",
@@ -131,7 +132,7 @@ function initBuffers(){
         0, 12, 13,
         0, 13, 14,
         0, 14, 15,
-        0, 15, 1,
+        0, 15, 1
     ];
     
     indexBufferObjectTri = gl.createBuffer();
@@ -171,6 +172,11 @@ function initBuffers(){
 }
 
 function drawScene(){
+    //radius uniform
+    radiusUniform = gl.getUniformLocation(program, "uRadius");
+    //assing values to uniforms
+    this.gl.uniform1f(radiusUniform, 0.7);
+    
     //get reference to attribute variable in vertex shader
     vertexPosAttr = gl.getAttribLocation(program, "aVertexPos");
     //Enable feeding of array of data to attribute
@@ -189,6 +195,9 @@ function drawScene(){
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexAngleAttr, 1, gl.FLOAT, false, 0, 0);
     
+    
+    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     //draw by using the indices
     if(selectedButton==="1"){
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);

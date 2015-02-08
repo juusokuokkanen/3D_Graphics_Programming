@@ -6,7 +6,7 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>Module 1 - WebGL version</title>
+        <title>Module 2 - WebGL shaders</title>
         <meta charset="UTF-8">
         <script src="js/jquery-1.11.2.js"></script>
     </head>
@@ -16,9 +16,9 @@ and open the template in the editor.
             <input type="radio" name="primitive" value="2">Line loop<br>
             <input type="radio" name="primitive" value="3">Points<br>
         </form>
-        <canvas id="canvas-webgl" width="400" height="300">Browser not supporting HTML5 canvas element</canvas>
+        <canvas id="canvas-webgl" width="500" height="500">Browser not supporting HTML5 canvas element</canvas>
         <script>
-            var selectedButton = 1;
+            var selectedButton = "1";
             $('#selectorForm input').on("change", function(){
                 selectedButton = $("input[name=primitive]:checked", "#selectorForm").val();
                 drawScene();
