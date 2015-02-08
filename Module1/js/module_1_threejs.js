@@ -6,7 +6,6 @@
 
 var renderer = null;
 var quad = null;
-var angle = 0;
 
 window.onload = function(){
     startThree();

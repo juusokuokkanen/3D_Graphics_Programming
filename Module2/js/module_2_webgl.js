@@ -12,7 +12,12 @@ var vertexShaderCode = null;
 var fragmentShaderCode = null;
 var program = null;
 var drawBuffer = null;
+var vertexIndices = null;
+var indexBufferObject = null;
 var vertexPosAttr = null;
+var vertexIndexAttr = null;
+var vertexCountUniform = null;
+var radiusUniform = null;
 window.onload = initWebGL();
 
 
@@ -24,7 +29,7 @@ function makeShaderProgram(source, type){
     if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
         return shader;
     }else{
-        alert("Shader could not be compiled. Type was: "+ type);
+        alert("Shader could not be compiled. Error was: "+ gl.getShaderInfoLog(shader));
         return null;
     }
 }
@@ -75,6 +80,15 @@ function initBuffers(){
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    
+    //create index buffer object
+    var indexBufferObjectData = [
+        0, 1, 2
+    ];
+    indexBufferObject = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObject);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBufferObjectData), gl.STATIC_DRAW);
+    indexBufferObject.itemCount = indexBufferObjectData.length;
 }
 
 function drawScene(){
@@ -86,8 +100,10 @@ function drawScene(){
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
-    //Draw the buffers, tell how to draw the data, where to start and how many vertices we should draw in total.
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    
+    //draw by using the indices
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObject);
+    gl.drawElements(gl.TRIANGLES, indexBufferObject.itemCount, gl.UNSIGNED_SHORT, 0);
 }
 
 function initWebGL(){
