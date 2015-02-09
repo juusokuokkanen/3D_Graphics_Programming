@@ -47,7 +47,7 @@ function initShaders(){
                 "vec4 resultVec = vec4(aVertexPos, 1.0);",
                 "resultVec.x = cos(aVertexAngle);",
                 "resultVec.y = sin(aVertexAngle);",
-                "resultVec.xyz = resultVec.xyz * radius;",
+                "resultVec.xy = resultVec.xy * radius;",
                 "return resultVec;",
             "}",
             "vec4 color(float angle){",
@@ -207,7 +207,7 @@ function drawScene(){
     //draw by using the indices
     if(selectedButton==="1"){
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
-        gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.LINE_LOOP, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
     }
     //draw by using the indices
     if(selectedButton==="2"){
