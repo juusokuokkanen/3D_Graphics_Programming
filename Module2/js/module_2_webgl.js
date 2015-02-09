@@ -42,6 +42,7 @@ function initShaders(){
             "attribute vec3 aVertexPos;",
             "attribute float aVertexAngle;",
             "varying highp float vAngle;",
+            "varying highp vec4 vColor;",
             "vec4 transform(float radius){",
                 "vec4 resultVec = vec4(aVertexPos, 1.0);",
                 "resultVec.x = cos(aVertexAngle);",
@@ -49,20 +50,25 @@ function initShaders(){
                 "resultVec.xyz = resultVec.xyz * radius;",
                 "return resultVec;",
             "}",
-            
+            "vec4 color(float angle){",
+                "vec4 color = vec4(smoothstep(-1.0, 1.0, cos(angle)), smoothstep(-1.0, 1.0, sin(angle)), 0, 1);",
+                "return color;",
+            "}",
             "void main(void){",
                 "vec4 transformedVector = transform(uRadius);",
                 "gl_PointSize = 4.0;",
                 "gl_Position = transformedVector;",
                 "vAngle = aVertexAngle;",
+                "vColor = color(aVertexAngle);",
             "}"
         ].join("\n");
 
         fragmentShaderCode = [
             "precision highp float;",
-            "varying mediump float vAngle;",
+            "varying highp float vAngle;",
+            "varying highp vec4 vColor;",
             "vec4 color(float angle){",
-                "vec4 color = vec4(smoothstep(-1.0, 1.0, sin(vAngle)), smoothstep(-1.0, 1.0, cos(vAngle)), 0.0, 1.0);",
+                "vec4 color = vec4(smoothstep(-1.0, 1.0, cos(vAngle)), smoothstep(-1.0, 1.0, sin(vAngle)), 0.0, 1.0);",
                 "return color;",
             "}",
             "void main(void){",
