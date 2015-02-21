@@ -12,15 +12,64 @@ var vertexShaderCode = null;
 var fragmentShaderCode = null;
 var program = null;
 var drawBuffer = null;
-var vertexAngleBuffer = null;
-var indexBufferObjectTri = null;
-var indexBufferObjectLine = null;
+var texCoordBuffer = null;
+var indexBufferObject = null;
 var vertexPosAttr = null;
 var vertexAngleAttr = null;
-var vertexCountUniform = null;
-var radiusUniform = null;
+var cubeMapSamplerUniform = null;
+var cubeMapTexture = null;
+var images = {};
 window.onload = initWebGL();
 
+function loadTextures(){
+    images.negZ = new Image();
+    images.posZ = new Image();
+    images.negX = new Image();
+    images.posX = new Image();
+    images.negY = new Image();
+    images.posY = new Image();
+    images.negZ.onload = function(){
+        images.posZ.onload = function(){
+            images.negX.onload =  function(){
+                images.posX.onload = function(){
+                    images.negY.onload = function(){
+                        images.posY.onload = function(){
+                            setupCubeMapTexture();
+                            cubeMapSamplerUniform = gl.getUniformLocation(program, "uTextureCube");
+                            gl.uniform1i(cubeMapSamplerUniform, 0);
+                            drawScene();
+                        };
+                        images.posY.src = "./images/posy.jpg";
+                    };
+                    images.negY.src = "./images/negy.jpg";
+                };
+                images.posX.src = "./images/posx.jpg";
+            };
+            images.negX.src = "./images/negx.jpg";
+        };
+        images.posZ.src = "./images/posz.jpg";
+    };
+    images.negZ.src = "./images/negz.jpg";
+}
+
+function setupCubeMapTexture(){
+    cubeMapTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMapTexture);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.negZ);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.posZ);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.negX);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.posX);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.negY);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.INSIGNED_BYTE, images.posY);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    if(!gl.isTexture(cubeMapTexture)){
+        console.error("Texture is invalid");
+    }
+}
 
 function makeShaderProgram(source, type){
     var shader = gl.createShader(type);
@@ -40,39 +89,20 @@ function initShaders(){
         vertexShaderCode = [
             "uniform float uRadius;",
             "attribute vec3 aVertexPos;",
-            "attribute float aVertexAngle;",
-            "varying highp float vAngle;",
-            "varying highp vec4 vColor;",
-            "vec4 transform(float radius){",
-                "vec4 resultVec = vec4(aVertexPos, 1.0);",
-                "resultVec.x = cos(aVertexAngle);",
-                "resultVec.y = sin(aVertexAngle);",
-                "resultVec.xy = resultVec.xy * radius;",
-                "return resultVec;",
-            "}",
-            "vec4 color(float angle){",
-                "vec4 color = vec4(smoothstep(-1.0, 1.0, cos(angle)), smoothstep(-1.0, 1.0, sin(angle)), 0, 1);",
-                "return color;",
-            "}",
-            "void main(void){",
-                "vec4 transformedVector = transform(uRadius);",
-                "gl_PointSize = 4.0;",
-                "gl_Position = transformedVector;",
-                "vAngle = aVertexAngle;",
-                "vColor = color(aVertexAngle);",
+            "attribute vec3 aTexCoord;",
+            "varying highp vec3 vTexCoord;",
+            "void main(void){" ,
+                "gl_Position = vec4(aVertexPos, 1.0);",
+                "vTexCoord = aTexCoord;",
             "}"
         ].join("\n");
 
         fragmentShaderCode = [
             "precision highp float;",
-            "varying highp float vAngle;",
-            "varying highp vec4 vColor;",
-            "vec4 color(float angle){",
-                "vec4 color = vec4(smoothstep(-1.0, 1.0, cos(vAngle)), smoothstep(-1.0, 1.0, sin(vAngle)), 0.0, 1.0);",
-                "return color;",
-            "}",
+            "varying highp vec3 vTexCoord;",
+            "uniform samplerCube uTextureCube;",
             "void main(void){",
-                "gl_FragColor = vColor;",
+                "gl_FragColor = textureCube(uTextureCube, vTexCoord);",
             "}"
         ].join("\n");
         
@@ -97,91 +127,114 @@ function initShaders(){
 
 function initBuffers(){
     var data = [
-        0.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0
+        -1.0, -1.0, -1.0,
+        -1.0, 1.0, -1.0,
+        1.0, -1.0, -1.0,
+        1.0, 1.0, -1.0,
+        1.0, -1.0, 1.0,
+        1.0, 1.0, 1.0,
+        -1.0, -1.0, 1.0,
+        -1.0, 1.0, 1.0
     ];
+    
+    
+    var indexBufferObjectData = [
+        //front
+        0, 1, 2,
+        2, 1, 3,
+        //right
+        2, 3, 4,
+        4, 3, 5,
+        //back
+        4, 5, 6,
+        6, 5, 7,
+        //left
+        6, 7, 0,
+        0, 7, 1,
+        //top
+        1, 7, 3,
+        3, 7, 5,
+        //bottom
+        6, 0, 4,
+        4, 0, 1  
+    ];
+    
+    //we generate the vertices from indices for this case
+    vertexData = [];
+    
+    for(var i = 0; i < indexBufferObjectData.length; i = i+3){
+        vertexData.push(data[i]);
+        vertexData.push(data[i+1]);
+        vertexData.push(data[i+2]);
+    }
+    
+    var texCoordData = [
+        //front -z
+        0, 0, -1,
+        0, 1, -1,
+        -1, 0, -1,
+        -1, 0, -1,
+        0, 1, -1,
+        -1, 1, -1,
+        //right +x
+        1, 0, 0,
+        1, 1, 0,
+        1, 0, -1,
+        1, 0, -1,
+        1, 1, 0,
+        1, 1, -1,
+        //back +z
+        0, 0, 1,
+        0, 1, 1,
+        1, 0, 1,
+        1, 0, 1,
+        0, 1, 1,
+        1, 1, 1,
+        //left -x
+        -1, 0, 0,
+        -1, 1, 0,
+        -1, 0, 1,
+        -1, 0, 1,
+        -1, 1, 0,
+        -1, 1, 1,
+        //top +y
+        0, 1, 0,
+        0, 1, -1,
+        1, 1, 0,
+        1, 1, 0,
+        0, 1, -1,
+        1, 1, -1,
+        //bottom -y
+        0, -1, 0,
+        0, -1, 1,
+        1, -1, 0,
+        1, -1, 0,
+        0, -1, 1,
+        1, -1, 1
+    ];
+    
     //create new VBO
     drawBuffer = gl.createBuffer();
     //Bind the created VBO
     gl.bindBuffer(gl.ARRAY_BUFFER, drawBuffer);
     //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    drawBuffer.itemCount = data.length;
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
+    drawBuffer.itemCount = vertexData.length;
     
-    //create index buffer object
-    var indexBufferObjectData = [
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-        0, 5, 6,
-        0, 6, 7,
-        0, 7, 8,
-        0, 8, 9,
-        0, 9, 10,
-        0, 10, 11,
-        0, 11, 12,
-        0, 12, 13,
-        0, 13, 14,
-        0, 14, 15,
-        0, 15, 1
-    ];
+    //Create texture cube map coordinates
+    texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoordData), gl.STATIC_DRAW);
+    texCoordBuffer.itemCount = texCoordData.length;
     
-    indexBufferObjectTri = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBufferObjectData), gl.STATIC_DRAW);
-    indexBufferObjectTri.itemCount = indexBufferObjectData.length;
-    
-    //create index buffer object
-    indexBufferObjectData = [
-        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-    ];
-    
-    indexBufferObjectPL = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBufferObjectData), gl.STATIC_DRAW);
-    indexBufferObjectPL.itemCount = indexBufferObjectData.length;
-    
-    //create angle data based on number of vertices. First always 0.0, because it should be the center of circle.
-    var vertexAngleData = [
-        0.0
-    ];
-    
-    for(var i = 1; i < drawBuffer.itemCount/3; i++){
-        //angle is determined by number of vertices in cirlces ring (we exclude the center)
-        //and create angle for every vertex
-        var angle = (2.0*Math.PI/(drawBuffer.itemCount/3-1))*(i-1);
-        vertexAngleData.push(angle);
-    }
-    
-    //create new VBO
-    vertexAngleBuffer = gl.createBuffer();
-    //Bind the created VBO
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexAngleBuffer);
-    //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexAngleData), gl.STATIC_DRAW);
-    vertexAngleBuffer.itemCount = vertexAngleData.length;
 }
 
 function drawScene(){
-    //radius uniform
-    radiusUniform = gl.getUniformLocation(program, "uRadius");
-    //assing values to uniforms
-    gl.uniform1f(radiusUniform, 0.7);
+    
+    textureCoordAttr = gl.getAttribLocation(program, "aTexCoord");
+    gl.enableVertexAttribArray(textureCoordAttr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.vertexAttribPointer(textureCoordAttr, 3, gl.FLOAT, false, 0, 0);
     
     //get reference to attribute variable in vertex shader
     vertexPosAttr = gl.getAttribLocation(program, "aVertexPos");
@@ -192,33 +245,12 @@ function drawScene(){
     //We tell the WebGL how to interpret the data in bind buffers
     gl.vertexAttribPointer(vertexPosAttr, 3, gl.FLOAT, false, 0, 0);
     
-    //get reference to attribute variable in vertex shader
-    vertexAngleAttr = gl.getAttribLocation(program, "aVertexAngle");
-    //Enable feeding of array of data to attribute
-    gl.enableVertexAttribArray(vertexAngleAttr);
-    //Bind the buffer that data we want to give to drawing
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexAngleBuffer);
-    //We tell the WebGL how to interpret the data in bind buffers
-    gl.vertexAttribPointer(vertexAngleAttr, 1, gl.FLOAT, false, 0, 0);
-    
     
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    //draw by using the indices
-    if(selectedButton==="1"){
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
-        gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
-    }
-    //draw by using the indices
-    if(selectedButton==="2"){
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
-        gl.drawElements(gl.LINE_LOOP, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
-    }
-    //draw by using the indices
-    if(selectedButton==="3"){
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectPL);
-        gl.drawElements(gl.POINTS, indexBufferObjectPL.itemCount, gl.UNSIGNED_SHORT, 0);
-    }
+    
+    gl.drawArrays(gl.TRIANGLES, 0, drawBuffer.itemCount);
+    
     
 }
 
@@ -241,7 +273,10 @@ function initWebGL(){
         
         initShaders();
         initBuffers();
-        drawScene();
+        
+        //drawScene();
+        //also draws the scene
+        loadTextures();
         
         
     }else{
