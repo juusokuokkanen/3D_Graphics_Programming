@@ -72,7 +72,7 @@ function initShaders(){
                 "return color;",
             "}",
             "void main(void){",
-                "gl_FragColor = color(vAngle);",
+                "gl_FragColor = vColor;",
             "}"
         ].join("\n");
         
@@ -181,7 +181,7 @@ function drawScene(){
     //radius uniform
     radiusUniform = gl.getUniformLocation(program, "uRadius");
     //assing values to uniforms
-    this.gl.uniform1f(radiusUniform, 0.7);
+    gl.uniform1f(radiusUniform, 0.7);
     
     //get reference to attribute variable in vertex shader
     vertexPosAttr = gl.getAttribLocation(program, "aVertexPos");
@@ -207,7 +207,7 @@ function drawScene(){
     //draw by using the indices
     if(selectedButton==="1"){
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObjectTri);
-        gl.drawElements(gl.LINE_LOOP, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.TRIANGLES, indexBufferObjectTri.itemCount, gl.UNSIGNED_SHORT, 0);
     }
     //draw by using the indices
     if(selectedButton==="2"){
