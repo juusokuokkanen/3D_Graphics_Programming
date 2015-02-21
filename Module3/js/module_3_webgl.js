@@ -18,6 +18,8 @@ var vertexPosAttr = null;
 var vertexAngleAttr = null;
 var cubeMapSamplerUniform = null;
 var cubeMapTexture = null;
+var perspectiveMatrixUniform = null;
+var modelMatrixUniform = null;
 var images = {};
 window.onload = initWebGL();
 
@@ -35,8 +37,6 @@ function loadTextures(){
                     images.negY.onload = function(){
                         images.posY.onload = function(){
                             setupCubeMapTexture();
-                            cubeMapSamplerUniform = gl.getUniformLocation(program, "uTextureCube");
-                            gl.uniform1i(cubeMapSamplerUniform, 0);
                             drawScene();
                         };
                         images.posY.src = "./images/posy.jpg";
@@ -68,6 +68,9 @@ function setupCubeMapTexture(){
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
     if(!gl.isTexture(cubeMapTexture)){
         console.error("Texture is invalid");
+    }else{
+        cubeMapSamplerUniform = gl.getUniformLocation(program, "uTextureCube");
+        gl.uniform1i(cubeMapSamplerUniform, 0);
     }
 }
 
@@ -90,9 +93,11 @@ function initShaders(){
             "uniform float uRadius;",
             "attribute vec3 aVertexPos;",
             "attribute vec3 aTexCoord;",
+            "uniform mat4 uModMatrix;",
+            "uniform mat4 uPerMatrix;",
             "varying highp vec3 vTexCoord;",
             "void main(void){" ,
-                "gl_Position = vec4(aVertexPos, 1.0);",
+                "gl_Position = vec4(aVertexPos, 1.0)*uModMatrix*uPerMatrix;",
                 "vTexCoord = aTexCoord;",
             "}"
         ].join("\n");
@@ -102,7 +107,8 @@ function initShaders(){
             "varying highp vec3 vTexCoord;",
             "uniform samplerCube uTextureCube;",
             "void main(void){",
-                "gl_FragColor = textureCube(uTextureCube, vTexCoord);",
+                "gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);",
+                "//gl_FragColor = textureCube(uTextureCube, vTexCoord);",
             "}"
         ].join("\n");
         
@@ -127,18 +133,18 @@ function initShaders(){
 
 function initBuffers(){
     var data = [
-        -1.0, -1.0, -1.0,
-        -1.0, 1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, -1.0, 1.0,
-        1.0, 1.0, 1.0,
-        -1.0, -1.0, 1.0,
-        -1.0, 1.0, 1.0
+        [-1.0, -1.0, -1.0],
+        [-1.0, 1.0, -1.0],
+        [1.0, -1.0, -1.0],
+        [1.0, 1.0, -1.0],
+        [1.0, -1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [-1.0, -1.0, 1.0],
+        [-1.0, 1.0, 1.0]
     ];
     
     
-    var indexBufferObjectData = [
+    var indexData = [
         //front
         0, 1, 2,
         2, 1, 3,
@@ -162,10 +168,8 @@ function initBuffers(){
     //we generate the vertices from indices for this case
     vertexData = [];
     
-    for(var i = 0; i < indexBufferObjectData.length; i = i+3){
-        vertexData.push(data[i]);
-        vertexData.push(data[i+1]);
-        vertexData.push(data[i+2]);
+    for(var i in indexData){
+        vertexData.push.apply(vertexData, data[indexData[i]]);
     }
     
     var texCoordData = [
@@ -231,6 +235,18 @@ function initBuffers(){
 
 function drawScene(){
     
+    //create model matrix and perpective matrix using THREE.matrix4
+    var rotMatrix = (new THREE.Matrix4()).makeRotationY(20.0);
+    var scaleMatrix = (new THREE.Matrix4()).makeScale(1, 1, 1);
+    var modelMatrix = (new THREE.Matrix4()).multiplyMatrices(rotMatrix, scaleMatrix);
+    var perspectiveMatrix = (new THREE.Matrix4()).makePerspective(140.0, canvas.width/canvas.height, 1, 1000);
+    
+    perspectiveMatrixUniform = gl.getUniformLocation(program, "uPerMatrix");
+    modelMatrixUniform = gl.getUniformLocation(program, "uModMatrix");
+    
+    gl.uniformMatrix4fv(perspectiveMatrixUniform, false, perspectiveMatrix.flattenToArrayOffset([], 0));
+    gl.uniformMatrix4fv(modelMatrixUniform, false, modelMatrix.flattenToArrayOffset([], 0));
+    
     textureCoordAttr = gl.getAttribLocation(program, "aTexCoord");
     gl.enableVertexAttribArray(textureCoordAttr);
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
@@ -249,7 +265,7 @@ function drawScene(){
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     
-    gl.drawArrays(gl.TRIANGLES, 0, drawBuffer.itemCount);
+    gl.drawArrays(gl.TRIANGLES, 0, drawBuffer.itemCount/3);
     
     
 }
