@@ -69,7 +69,7 @@ function setupCubeMapTexture(){
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
     if(!gl.isTexture(cubeMapTexture)){
         console.error("Texture is invalid");
     }else{
@@ -94,28 +94,22 @@ function makeShaderProgram(source, type){
 function initShaders(){
     if(vertexShaderCode === null || fragmentShaderCode === null){
         vertexShaderCode = [
-            "uniform float uRadius;",
             "attribute vec3 aVertexPos;",
             "attribute vec3 aTexCoord;",
-            "attribute vec3 aVertexColor;",
             "uniform mat4 uModMatrix;",
             "uniform mat4 uPerMatrix;",
             "varying highp vec3 vTexCoord;",
-            "varying vec3 vVertexColor;",
             "void main(void){",
                 "gl_Position = uPerMatrix * uModMatrix * vec4(aVertexPos, 1.0);",
                 "vTexCoord = aTexCoord;",
-                "vVertexColor = aVertexColor;",
             "}"
         ].join("\n");
 
         fragmentShaderCode = [
             "precision highp float;",
             "varying highp vec3 vTexCoord;",
-            "varying vec3 vVertexColor;",
             "uniform samplerCube uTextureCube;",
             "void main(void){",
-                "//gl_FragColor = vec4(vVertexColor, 1.0);",
                 "gl_FragColor = textureCube(uTextureCube, vTexCoord);",
             "}"
         ].join("\n");
@@ -224,52 +218,6 @@ function initBuffers(){
         -1, -1, 1
     ];
     
-    var vertexColorData = [
-        //front -z
-        1, 0, 0,
-        1, 0, 0,
-        1, 0, 0,
-        1, 0, 0,
-        1, 0, 0,
-        1, 0, 0,
-        //right +x
-        1, 0, 1,
-        1, 0, 1,
-        1, 0, 1,
-        1, 0, 1,
-        1, 0, 1,
-        1, 0, 1,
-        //back +z
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, 1,
-        
-        //left -x
-        0, 1, 1,
-        0, 1, 1,
-        0, 1, 1,
-        0, 1, 1,
-        0, 1, 1,
-        0, 1, 1,
-        //top +y
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        //bottom -y
-        1, 1, 0,
-        1, 1, 0,
-        1, 1, 0,
-        1, 1, 0,
-        1, 1, 0,
-        1, 1, 0,
-    ];
-    
     //create new VBO
     drawBuffer = gl.createBuffer();
     //Bind the created VBO
@@ -277,12 +225,6 @@ function initBuffers(){
     //Send data to binded VBO. Data will stay in this buffer, and we can rebind it again later.
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
     drawBuffer.itemCount = vertexData.length;
-    
-    //Create texture cube map coordinates
-    vertexColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColorData), gl.STATIC_DRAW);
-    vertexColorBuffer.itemCount = vertexColorData.length;
     
     //Create texture cube map coordinates
     texCoordBuffer = gl.createBuffer();
@@ -318,11 +260,6 @@ function drawScene(){
     gl.enableVertexAttribArray(textureCoordAttr);
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
     gl.vertexAttribPointer(textureCoordAttr, 3, gl.FLOAT, false, 0, 0);
-    
-    vertexColorAttr = gl.getAttribLocation(program, "aVertexColor");
-    gl.enableVertexAttribArray(vertexColorAttr);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-    gl.vertexAttribPointer(vertexColorAttr, 3, gl.FLOAT, false, 0, 0);
     
     //get reference to attribute variable in vertex shader
     vertexPosAttr = gl.getAttribLocation(program, "aVertexPos");
