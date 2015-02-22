@@ -23,6 +23,8 @@ var modelMatrixUniform = null;
 var vertexColorBuffer = null;
 var vertexColorAttr = null;
 var images = {};
+var rotationX = 0;
+var rotationY = 0;
 window.onload = initWebGL();
 
 function loadTextures(){
@@ -179,47 +181,47 @@ function initBuffers(){
     }
     var texCoordData = [
         //front -z
-        0, 0, -1,
-        0, 1, -1,
-        -1, 0, -1,
-        -1, 0, -1,
-        0, 1, -1,
+        -1, -1, -1,
         -1, 1, -1,
+        1, -1, -1,
+        1, -1, -1,
+        -1, 1, -1,
+        1, 1, -1,
         //right +x
-        1, 0, 0,
-        1, 1, 0,
-        1, 0, -1,
-        1, 0, -1,
-        1, 1, 0,
+        1, -1, -1,
         1, 1, -1,
-        //back +z
-        0, 0, 1,
-        0, 1, 1,
-        1, 0, 1,
-        1, 0, 1,
-        0, 1, 1,
+        1, -1, 1,
+        1, -1, 1,
+        1, 1, -1,
         1, 1, 1,
-        //left -x
-        -1, 0, 0,
-        -1, 1, 0,
-        -1, 0, 1,
-        -1, 0, 1,
-        -1, 1, 0,
+        //back +z
+        1, -1, 1,
+        1, 1, 1,
+        -1, -1, 1,
+        -1, -1, 1,
+        1, 1, 1,
         -1, 1, 1,
+        //left -x
+        -1, -1, 1,
+        -1, 1, 1,
+        -1, -1, -1,
+        -1, -1, -1,
+        -1, 1, 1,
+        -1, 1, -1,
         //top +y
-        0, 1, 0,
-        0, 1, -1,
-        1, 1, 0,
-        1, 1, 0,
-        0, 1, -1,
+        1, 1, 1,
         1, 1, -1,
+        -1, 1, 1,
+        -1, 1, 1,
+        1, 1, -1,
+        -1, 1, -1,
         //bottom -y
-        0, -1, 0,
-        0, -1, 1,
-        1, -1, 0,
-        1, -1, 0,
-        0, -1, 1,
-        1, -1, 1
+        1, -1, -1,
+        1, -1, 1,
+        -1, -1, -1,
+        -1, -1, -1,
+        1, -1, 1,
+        -1, -1, 1
     ];
     
     var vertexColorData = [
@@ -297,13 +299,13 @@ function drawScene(){
     var perspectiveMatrix = (new THREE.Matrix4()).makePerspective(70.0, canvas.width/canvas.height, 0.1, 1000);
     
     //local model transformation multiplication chain
-    var mat4Trans = WEBGL_LIB.Math.getTranslationMat4f(0, 0, 10).matrixMult(
+    var mat4Trans = WEBGL_LIB.Math.getTranslationMat4f(0, 0, 0).matrixMult(
                                     WEBGL_LIB.Math.getZRotationMat4f(0).matrixMult(
-                                    WEBGL_LIB.Math.getYRotationMat4f(35).matrixMult(
-                                    WEBGL_LIB.Math.getXRotationMat4f(-20).matrixMult(
-                                    WEBGL_LIB.Math.getScaleMat4f(1, 1, 1)))));
+                                    WEBGL_LIB.Math.getYRotationMat4f(rotationX).matrixMult(
+                                    WEBGL_LIB.Math.getXRotationMat4f(rotationY).matrixMult(
+                                    WEBGL_LIB.Math.getScaleMat4f(20, 20, 20)))));
 
-    var mat4Proj = WEBGL_LIB.Math.getPerspectiveProjMat4f(150.0, canvas.width, canvas.height, 0.1, 1000.0);
+    var mat4Proj = WEBGL_LIB.Math.getPerspectiveProjMat4f(150.0, canvas.width, canvas.height, 0.1, 100.0);
 		
     
     perspectiveMatrixUniform = gl.getUniformLocation(program, "uPerMatrix");
@@ -378,25 +380,6 @@ WEBGL_LIB.Math = {};
 //Define entities
 WEBGL_LIB.Math.Entities = {};
 
-WEBGL_LIB.Math.Entities.Vector3f = function(x, y, z){
-		/*
-		Class: Vector3f
-
-		Desc:
-			Class that represents 3-dimensional vector.
-		Constructor params:
-			x: value set to x-axis
-			y: value set to y-axis
-			z: value set to z-axis
-		Member variables:
-			x: represents vectors x-axis value
-			y: represents vectors y-axis value
-			z: represents vectors z-axis value
-		*/
-		this.array = new Float32Array([x, y, z]); 
-			
-};
-
 WEBGL_LIB.Math.Entities.Matrix4f = function(matrixArray){
     /*
 	Class: Matrix4f
@@ -429,18 +412,6 @@ WEBGL_LIB.Math.Entities.Matrix4f = function(matrixArray){
     }else{
     	this.array = new Float32Array(matrixArray);
     }
-};
-
-
-
-//Matrix4f methods
-
-WEBGL_LIB.Math.Entities.Matrix4f.prototype.mulScal = function(scalar){
-    var result = new WEBGL_LIB.Math.Entities.Matrix4f();
-    for(var i = 0; i < this.array.length; i++){
-    	this.array[i] = this.array[i] * scalar;
-    }
-    return result;
 };
 
 WEBGL_LIB.Math.Entities.Matrix4f.prototype.matrixMult = function(mat4){

@@ -9,9 +9,35 @@ and open the template in the editor.
         <title>Module 2 - WebGL shaders</title>
         <meta charset="UTF-8">
         <script src="js/three.js"></script>
+        <script src="js/jquery-1.11.2.js"></script>
     </head>
     <body>
-        <canvas id="canvas-webgl" width="500" height="500">Browser not supporting HTML5 canvas element</canvas>
+        <canvas id="canvas-webgl" width="1000" height="1000">Browser not supporting HTML5 canvas element</canvas>
+        <br>
+        <form id="rotateX">
+            <input type="button" name="primitive" value="left"/>
+            <input type="button" name="primitive" value="right"/>
+        </form>
+        <br>
+        <form id="rotateY">
+            <input type="button" name="primitive" value="up"/><br>
+            <input type="button" name="primitive" value="down"/><br>
+        </form>
         <script src="js/module_3_webgl.js"></script>
+        <script>
+           $('#rotateX input').on("click", function(){
+                var value = $(this).attr("value");
+                var direction = ((value === "left") ? -1 : 1);
+                rotationX = rotationX + 10 * direction;
+                drawScene();
+            });
+            
+            $('#rotateY input').on("click", function(){
+                var value = $(this).attr("value");
+                var direction = ((value === "up") ? 1 : -1);
+                rotationY = rotationY + 10 * direction;
+                drawScene();
+            });
+        </script>
     </body>
 </html>
