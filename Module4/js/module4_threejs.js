@@ -92,10 +92,19 @@ function setup(){
     initializeArmHierarchy();
     
     scene.add(meshes.shoulder);
+    meshes.shoulder.rotaionAngleZ = 0.0;
     //scene.add(meshes.upperArm);
     //scene.add(meshes.elbow);
     camera.position.z = 30;
-    camera.position.y = 30;
+    camera.position.y = 20;
     
     renderer.render(scene, camera);
+}
+
+function update(){
+    var rotationShoulder = Math.PI/4 * Math.cos(meshes.shoulder.rotaionAngleZ);
+    meshes.shoulder.rotaionAngleZ += 0.01;
+    meshes.shoulder.rotation.z = rotationShoulder;
+    renderer.render(scene, camera);
+    requestAnimationFrame(update);
 }
