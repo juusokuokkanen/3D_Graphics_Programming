@@ -48,14 +48,14 @@ function initializeArmHierarchy(){
     meshes.lowerArm.add(meshes.hand);
     //fingers
     //thumb
-    meshes.thumb = meshes.elbow = new THREE.Mesh(
+    meshes.thumb = new THREE.Mesh(
                 new THREE.BoxGeometry(3.0, 1, 1),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
             );
     meshes.thumb.position.x = 3;
     meshes.hand.add(meshes.thumb);
     //index
-    meshes.index = meshes.elbow = new THREE.Mesh(
+    meshes.index = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
             );
@@ -63,14 +63,14 @@ function initializeArmHierarchy(){
     meshes.index.position.x = 1.5;
     meshes.hand.add(meshes.index);
     //middle
-    meshes.middle = meshes.elbow = new THREE.Mesh(
+    meshes.middle = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
             );
     meshes.middle.position.y = 3;
     meshes.hand.add(meshes.middle);
     //pinky
-    meshes.pinky = meshes.elbow = new THREE.Mesh(
+    meshes.pinky = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
             );
@@ -93,6 +93,8 @@ function setup(){
     
     scene.add(meshes.shoulder);
     meshes.shoulder.rotaionAngleZ = 0.0;
+    meshes.elbow.rotationAngleZ = 0.0;
+    meshes.hand.rotationAngleX = 0.0;
     //scene.add(meshes.upperArm);
     //scene.add(meshes.elbow);
     camera.position.z = 30;
@@ -105,6 +107,11 @@ function update(){
     var rotationShoulder = Math.PI/4 * Math.cos(meshes.shoulder.rotaionAngleZ);
     meshes.shoulder.rotaionAngleZ += 0.01;
     meshes.shoulder.rotation.z = rotationShoulder;
+    
+    var rotationElbow = Math.PI/8 * Math.sin(meshes.elbow.rotationAngleZ);
+    meshes.elbow.rotationAngleZ += 0.01; 
+    meshes.elbow.rotation.z = rotationElbow;
+    
     renderer.render(scene, camera);
     requestAnimationFrame(update);
 }
