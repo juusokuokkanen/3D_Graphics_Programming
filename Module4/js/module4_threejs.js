@@ -52,7 +52,8 @@ function initializeArmHierarchy(){
                 new THREE.BoxGeometry(3.0, 1, 1),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF00FF)})
             );
-    meshes.thumb.position.x = 3;
+    meshes.thumb.position.x = 2.8;
+    meshes.thumb.rotation.z = Math.PI/4;
     meshes.hand.add(meshes.thumb);
     //index
     meshes.index = new THREE.Mesh(
@@ -97,8 +98,8 @@ function setup(){
     meshes.hand.rotationAngleX = 0.0;
     //scene.add(meshes.upperArm);
     //scene.add(meshes.elbow);
-    camera.position.z = 30;
-    camera.position.y = 20;
+    camera.position.z = 35;
+    camera.position.y = 15;
     
     renderer.render(scene, camera);
 }
@@ -113,8 +114,9 @@ function update(){
     meshes.elbow.rotation.z = rotationElbow;
     
     var rotationHand = Math.PI/6.5 * Math.cos(meshes.hand.rotationAngleX);
-    meshes.hand.rotationAngleX += 0.02;
+    meshes.hand.rotationAngleX += 0.05;
     meshes.hand.rotation.x = rotationHand;
+    
     
     renderer.render(scene, camera);
     requestAnimationFrame(update);
