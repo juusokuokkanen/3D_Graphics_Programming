@@ -21,43 +21,43 @@ function initializeArmHierarchy(){
     //upper arm
     meshes.upperArm = new THREE.Mesh(
                 new THREE.BoxGeometry(3, 10, 3),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0x00FF00)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFFFF00)})
             );
-    meshes.upperArm.position.y = 6
+    meshes.upperArm.position.y = 6;
     meshes.shoulder.add(meshes.upperArm);
     //elbow
     meshes.elbow = new THREE.Mesh(
                 new THREE.SphereGeometry(3, 10, 10),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0x00FF00)})
             );
     meshes.elbow.position.y = 6;
     meshes.upperArm.add(meshes.elbow);
     //lower arm
     meshes.lowerArm = new THREE.Mesh(
-                new THREE.BoxGeometry(3, 10, 3),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0x00FF00)})
+                new THREE.BoxGeometry(3, 10, 2),
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0x00FFFF)})
             );
-    meshes.lowerArm.position.y = 7
+    meshes.lowerArm.position.y = 7;
     meshes.elbow.add(meshes.lowerArm);
     //hand/wrist
     meshes.hand = new THREE.Mesh(
-                new THREE.BoxGeometry(4, 4, 4),
+                new THREE.BoxGeometry(4.5, 4.5, 4.5),
                 new THREE.MeshBasicMaterial({color : new THREE.Color(0x0000FF)})
             );
-    meshes.hand.position.y = 7
+    meshes.hand.position.y = 6.5;
     meshes.lowerArm.add(meshes.hand);
     //fingers
     //thumb
     meshes.thumb = new THREE.Mesh(
                 new THREE.BoxGeometry(3.0, 1, 1),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF00FF)})
             );
     meshes.thumb.position.x = 3;
     meshes.hand.add(meshes.thumb);
     //index
     meshes.index = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF00FF)})
             );
     meshes.index.position.y = 3;
     meshes.index.position.x = 1.5;
@@ -65,14 +65,14 @@ function initializeArmHierarchy(){
     //middle
     meshes.middle = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF00FF)})
             );
     meshes.middle.position.y = 3;
     meshes.hand.add(meshes.middle);
     //pinky
     meshes.pinky = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 4, 1),
-                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF0000)})
+                new THREE.MeshBasicMaterial({color : new THREE.Color(0xFF00FF)})
             );
     meshes.pinky.position.y = 3;
     meshes.pinky.position.x = -1.5;
@@ -111,6 +111,10 @@ function update(){
     var rotationElbow = Math.PI/8 * Math.sin(meshes.elbow.rotationAngleZ);
     meshes.elbow.rotationAngleZ += 0.01; 
     meshes.elbow.rotation.z = rotationElbow;
+    
+    var rotationHand = Math.PI/6.5 * Math.cos(meshes.hand.rotationAngleX);
+    meshes.hand.rotationAngleX += 0.02;
+    meshes.hand.rotation.x = rotationHand;
     
     renderer.render(scene, camera);
     requestAnimationFrame(update);
