@@ -13,18 +13,21 @@
        vec3 pos;
     };
 
-    // global ambient
-    uniform vec4  u_ambient;
 
     // our directional light 
     uniform Light dirlight;
     
     varying vec2 v_uv;    
     varying vec4 v_color;
+    varying vec3 vNormal;
+    varying vec3 vLightDir;
 
     void main() {
 
 	v_color = vec4(1);
+        
+        vNormal = normal;
+        vLightDir = dirlight.pos;
 
         // pass texcoords
         v_uv    = uv;
@@ -39,13 +42,21 @@
   <script id="light-fs" type="x-shader/x-fragment">
 
     uniform sampler2D map;
+    // global ambient
+    uniform vec4  u_ambient;
 
     varying vec2 v_uv;
     varying vec4 v_color;
+    varying vec3 vNormal;
+    varying vec3 vLightDir;
     
     void main(){
        // combine texel color with received color from vertex shader
-       gl_FragColor = texture2D(map, v_uv) * v_color;
+       //vec3 lightDir = vLightDir;
+       vec3 lightDir = vec3(1.0, 0.0, 0.0);
+       float light = max(dot(normalize(vNormal), normalize(lightDir)), 0.1);
+       vec4 texture = texture2D(map, v_uv) * v_color;
+       gl_FragColor = vec4(texture.rgb*(u_ambient.rgb + (vec3(0.6,0.6,0.6)*light)), texture.a);
     }
   </script>
 </head>

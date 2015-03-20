@@ -86,7 +86,7 @@ $(function(){
 
     // directional light for the moon
     var directionalLight = new THREE.DirectionalLight( 0x88aaff, 1.0 ); 
-    directionalLight.position.set( 1, 1, -1 ); 
+    directionalLight.position.set( 1, -1, 1 ); 
 
     scene.add( directionalLight );
 
@@ -119,6 +119,7 @@ $(function(){
     var loader = new THREE.JSONLoader();
     // Create ground from cube and some rock
     var rockTexture = THREE.ImageUtils.loadTexture("rock.jpg");
+
 
     // texture wrapping mode set as repeating
     rockTexture.wrapS = THREE.RepeatWrapping;
