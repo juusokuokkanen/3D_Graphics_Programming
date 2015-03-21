@@ -25,7 +25,7 @@ var mouse = {
 var camObject = null;
 var keysPressed = [];
 var ruins = [];
-
+var doPrint = true;
 var shoulderRotationJoint;
 var shoulderTiltingJoint;
 var upperArm;
@@ -46,6 +46,14 @@ var fps = {
     ticks: 0,
     time: null
 }
+
+var customSpotLight = {
+   direction : new THREE.Vector3(0,0,-1),
+   position : new THREE.Vector3(0,0,0),
+   angle : Math.PI/2,
+   length : 20.0
+};
+
 var spotLight = null;
 var spotLightObj = null;
 var ambientLight = null;
@@ -54,6 +62,24 @@ var ambientLight = null;
 function colorToVec4(color){
     var res = new THREE.Vector4(color.r, color.g, color.b, color.a);
     return res;
+}
+
+function setSpotLight(mesh){
+    if(doPrint){
+       console.debug(rotationMat);
+       doPrint = false;
+    }
+    customSpotLight.position = camObject.position;
+    var camRotation = new THREE.Matrix4().extractRotation(camera.matrix);
+    var camObjRotation = new THREE.Matrix4().extractRotation(camObject.matrix);
+    var rotationMat = new THREE.Matrix4().multiplyMatrices(camObjRotation, camRotation);
+
+    var dir = new THREE.Vector3(0,0,-1);
+    var dirW = dir.applyMatrix4(rotationMat);
+
+    customSpotLight.direction = dirW;
+    mesh.material.uniforms["spotlight.dir"].value = customSpotLight.direction;
+    mesh.material.uniforms["spotlight.pos"].value = customSpotLight.position;
 }
 
 $(function(){
@@ -143,6 +169,22 @@ $(function(){
 	    u_ambient: { 
 		type: 'v4',
 		value: colorToVec4(ambientLight.color) /* global ambient */
+	    },
+            "spotlight.pos": {
+		type: 'v3',
+		value: customSpotLight.position
+	    },
+            "spotlight.dir": {
+		type: 'v3',
+		value: customSpotLight.direction
+	    },
+            "spotlight.angle": {
+		type: 'f',
+		value: customSpotLight.angle
+	    },
+            "spotlight.length": {
+		type: 'f',
+		value: customSpotLight.length
 	    }
 	}
     });
@@ -401,6 +443,15 @@ function update(){
     var dirW = dir.applyMatrix4(camObject.matrixRotationWorld);
 
     spotLight.target.position = dirW;
+    
+    if(doPrint){
+       console.debug(camObject.matrixRotationWorld);
+    }
+    
+    for(var i = 0; i < ruins.length; i++){
+        setSpotLight(ruins[i], camObject.matrixWorld);
+    }
+    
     elbowJoint.rotation.z = Math.sin(12*angle);
 
     shoulderTiltingJoint.rotation.z = Math.cos(12*angle);
