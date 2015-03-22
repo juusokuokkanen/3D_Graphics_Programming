@@ -16,6 +16,8 @@
     struct SpotLight{
         vec3 pos;
         vec3 dir;
+        vec3 lCol;
+        float exp;
         float angle;
         float length;
     };
@@ -50,9 +52,6 @@
         float dotProduct = dot( transformedNormal, dirVector );
         float dirLightingVal = max(dotProduct, 0.0 );
         
-        
-        vec4 dirLightPos = viewMatrix * vec4(dirlight.pos, 0.0);
-        vec3 normLightDir = normalize(dirLightPos.xyz);
         vDirLight = vec4(u_ambient.xyz + (vec3(0.4, 0.4, 0.4) * dirLightingVal), 1.0);
         vNormal = transformedNormal;
         vLightRay = spotlight.pos - mvPosition.xyz;
@@ -65,12 +64,14 @@
     struct SpotLight{
         vec3 pos;
         vec3 dir;
+        vec3 lCol;
+        float exp;
         float angle;
         float length;
     };
     
     uniform SpotLight spotlight;
-
+    uniform float exp;
     uniform sampler2D map;
 
     varying vec2 v_uv;
@@ -81,10 +82,16 @@
 
     void main(){
        vec4 spotL = vec4(0.0, 0.0, 0.0, 0.0);
-       if(dot(normalize(spotlight.dir), normalize(vLightRay)) > cos(spotlight.angle)){
+       float spotEffect = dot(normalize(spotlight.dir), normalize(vLightRay));
+       float spotLength = length(vLightRay);
+       if(spotEffect > cos(spotlight.angle)){
             float lightValue = max(dot(normalize(vNormal), spotlight.dir), 0.0);
             if(lightValue > 0.0){
-                spotL += (vec4(0.5, 0.5, 0.5, 0.5));
+                if(spotLength < spotlight.length){
+                    spotEffect = max(pow(spotEffect, spotlight.exp), 0.0);
+                    float distanceEffect = 1.0 - min(spotLength / spotlight.length, 1.0);
+                    spotL += (vec4(spotlight.lCol, 1.0) * spotEffect * distanceEffect);
+                }
             }
        }
     

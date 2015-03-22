@@ -151,6 +151,14 @@ $(function(){
 		type: 'v3',
 		value: spotLight.target.position
 	    },
+            "spotlight.lCol": {
+		type: 'v3',
+		value: new THREE.Vector3(1.0, 1.0, 1.0)
+	    },
+            "spotlight.exp": {
+		type: 'f',
+		value: spotLight.exponent
+	    },
             "spotlight.angle": {
 		type: 'f',
 		value: Math.PI/16
