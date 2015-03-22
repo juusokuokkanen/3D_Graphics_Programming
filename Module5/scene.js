@@ -142,7 +142,23 @@ $(function(){
 	    u_ambient: { 
 		type: 'v4',
 		value: colorToVec4(ambientLight.color) /* global ambient */
-	    }
+	    },
+            "spotlight.pos": {
+		type: 'v3',
+		value: spotLight.position
+	    },
+            "spotlight.dir": {
+		type: 'v3',
+		value: spotLight.target.position
+	    },
+            "spotlight.angle": {
+		type: 'f',
+		value: Math.PI/16
+	    },
+            "spotlight.length": {
+		type: 'f',
+		value: 15.0
+	    },
 	}
     });
 

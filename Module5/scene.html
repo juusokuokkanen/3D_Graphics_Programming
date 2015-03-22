@@ -12,6 +12,15 @@
     struct Light {
        vec3 pos;
     };
+    
+    struct SpotLight{
+        vec3 pos;
+        vec3 dir;
+        float angle;
+        float length;
+    };
+    
+    uniform SpotLight spotlight;
 
     // global ambient
     uniform vec4  u_ambient;
@@ -22,6 +31,8 @@
     varying vec2 v_uv;    
     varying vec4 v_color;
     varying vec4 vDirLight;
+    varying vec3 vNormal;
+    varying vec3 vLightRay;
     void main() {
 
 	v_color = vec4(1);
@@ -30,25 +41,55 @@
         v_uv    = uv;
 
         // compute vertex position 
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1);
-        vec3 transformedNormal = normal;
-        vDirLight = vec4(u_ambient.xyz + (vec3(0.4, 0.4, 0.4) * max(dot(dirlight.pos, transformedNormal),0.0)), 1.0);
-    
+        vec4 mvPosition = modelViewMatrix * vec4(position,1);
+        gl_Position = projectionMatrix * mvPosition;
+        vec3 transformedNormal = normalize(normalMatrix * normal);
+        
+        vec4 lDirection = viewMatrix * vec4(dirlight.pos, 0.0 );
+        vec3 dirVector = normalize( lDirection.xyz );
+        float dotProduct = dot( transformedNormal, dirVector );
+        float dirLightingVal = max(dotProduct, 0.0 );
+        
+        
+        vec4 dirLightPos = viewMatrix * vec4(dirlight.pos, 0.0);
+        vec3 normLightDir = normalize(dirLightPos.xyz);
+        vDirLight = vec4(u_ambient.xyz + (vec3(0.4, 0.4, 0.4) * dirLightingVal), 1.0);
+        vNormal = transformedNormal;
+        vLightRay = spotlight.pos - mvPosition.xyz;
     }
 
   </script>
   <!-- fragment shader for custom lighting --->
   <script id="light-fs" type="x-shader/x-fragment">
+  
+    struct SpotLight{
+        vec3 pos;
+        vec3 dir;
+        float angle;
+        float length;
+    };
+    
+    uniform SpotLight spotlight;
 
     uniform sampler2D map;
 
     varying vec2 v_uv;
     varying vec4 v_color;
     varying vec4 vDirLight;
-    
+    varying vec3 vNormal;
+    varying vec3 vLightRay;
+
     void main(){
+       vec4 spotL = vec4(0.0, 0.0, 0.0, 0.0);
+       if(dot(normalize(spotlight.dir), normalize(vLightRay)) > cos(spotlight.angle)){
+            float lightValue = max(dot(normalize(vNormal), spotlight.dir), 0.0);
+            if(lightValue > 0.0){
+                spotL += (vec4(0.5, 0.5, 0.5, 0.5));
+            }
+       }
+    
        // combine texel color with received color from vertex shader
-       gl_FragColor = texture2D(map, v_uv) * v_color * vDirLight;
+       gl_FragColor = texture2D(map, v_uv) * v_color * (vDirLight + spotL);
     }
   </script>
 </head>
