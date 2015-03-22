@@ -21,7 +21,7 @@
     
     varying vec2 v_uv;    
     varying vec4 v_color;
-
+    varying vec4 vDirLight;
     void main() {
 
 	v_color = vec4(1);
@@ -31,6 +31,8 @@
 
         // compute vertex position 
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1);
+        vec3 transformedNormal = normal;
+        vDirLight = vec4(u_ambient.xyz + (vec3(0.4, 0.4, 0.4) * max(dot(dirlight.pos, transformedNormal),0.0)), 1.0);
     
     }
 
@@ -42,10 +44,11 @@
 
     varying vec2 v_uv;
     varying vec4 v_color;
+    varying vec4 vDirLight;
     
     void main(){
        // combine texel color with received color from vertex shader
-       gl_FragColor = texture2D(map, v_uv) * v_color;
+       gl_FragColor = texture2D(map, v_uv) * v_color * vDirLight;
     }
   </script>
 </head>
