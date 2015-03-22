@@ -12,17 +12,6 @@
     struct Light {
        vec3 pos;
     };
-    
-    struct SpotLight{
-        vec3 pos;
-        vec3 dir;
-        vec3 lCol;
-        float exp;
-        float angle;
-        float length;
-    };
-    
-    uniform SpotLight spotlight;
 
     // global ambient
     uniform vec4  u_ambient;
@@ -35,6 +24,7 @@
     varying vec4 vDirLight;
     varying vec3 vNormal;
     varying vec3 vLightRay;
+    varying vec4 vFragMVPos;
     void main() {
 
 	v_color = vec4(1);
@@ -54,7 +44,7 @@
         
         vDirLight = vec4(u_ambient.xyz + (vec3(0.4, 0.4, 0.4) * dirLightingVal), 1.0);
         vNormal = transformedNormal;
-        vLightRay = spotlight.pos - mvPosition.xyz;
+        vFragMVPos = mvPosition;
     }
 
   </script>
@@ -78,12 +68,13 @@
     varying vec4 v_color;
     varying vec4 vDirLight;
     varying vec3 vNormal;
-    varying vec3 vLightRay;
+    varying vec4 vFragMVPos;
 
     void main(){
        vec4 spotL = vec4(0.0, 0.0, 0.0, 0.0);
-       float spotEffect = dot(normalize(spotlight.dir), normalize(vLightRay));
-       float spotLength = length(vLightRay);
+       vec3 lightRay = spotlight.pos - vFragMVPos.xyz;
+       float spotEffect = dot(normalize(spotlight.dir), normalize(lightRay));
+       float spotLength = length(lightRay);
        if(spotEffect > cos(spotlight.angle)){
             float lightValue = max(dot(normalize(vNormal), spotlight.dir), 0.0);
             if(lightValue > 0.0){
