@@ -161,11 +161,11 @@ $(function(){
 	    },
             "spotlight.angle": {
 		type: 'f',
-		value: Math.PI/16
+		value: spotLight.angle
 	    },
             "spotlight.length": {
 		type: 'f',
-		value: 15.0
+		value: spotLight.distance
 	    },
 	}
     });
