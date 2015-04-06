@@ -280,19 +280,24 @@ $(function(){
 	.attr("width", fps.width)
 	.attr("height", fps.height);
 
-    addArm();
     bonfire = new Bonfire({
         bonfirePosition : new THREE.Vector3(0, 0, 0),
+        
         //smoke
-        smokeVelocity : new THREE.Vector3(0, 0.5, 0),
+        smokeVelocity : new THREE.Vector3(0.1, 0.5, 0),
         smokeEnergy : 100,
         smokeEnergyDrain : 20,
-        smokeMaxParticles : 10,
+        smokeMaxParticles : 25,
+        //smoke particles per second
+        smokeFrequency : 0.5,
+        
         //fire
         fireVelocity : new THREE.Vector3(0, 1, 0),
         fireEnergy : 100,
         fireEnergyDrain : 150,
-        fireMaxParticles : 4
+        fireMaxParticles : 4,
+        //smoke particles per second
+        fireFrequency : 5
     });
     bonfire.initSmokeParticles(1);
     scene.add(bonfire.smokeSystem);
@@ -424,10 +429,6 @@ function update(){
     var dirW = dir.applyMatrix4(camObject.matrixRotationWorld);
 
     spotLight.target.position = dirW;
-    elbowJoint.rotation.z = Math.sin(12*angle);
-
-    shoulderTiltingJoint.rotation.z = Math.cos(12*angle);
-    wrist.rotation.x = Math.sin(25*angle);
     
     bonfire.updateBonfireParticles();
     // request another frame update
@@ -533,6 +534,7 @@ function Bonfire(properties){
          this.smokeParticles.vertices.push(new THREE.Vector3(0,0,0));
      }
      this.smokeParticlesAlive = 0;
+     this.lastSmokeCreated = 0;
      this.smokeMaterial = new THREE.ParticleBasicMaterial({
          map : THREE.ImageUtils.loadTexture("smoke.png"),
          transparent: true,
@@ -541,7 +543,7 @@ function Bonfire(properties){
          blendingEquation: THREE.AddEquation,
          blendSrc : THREE.SrcAlphaFactor,
          blendDst : THREE.OneFactor,
-         size : 1
+         size : 3
      });
      this.smokeSystem = new THREE.ParticleSystem(this.smokeParticles, this.smokeMaterial);
      this.smokeSystem.renderDepth = 0;
@@ -553,6 +555,7 @@ function Bonfire(properties){
      //fire system
      this.fireParticles = new THREE.Geometry();
      this.fireParticlesAlive = 0;
+     this.lastFireCreated = 0;
      //make initial particle vertices
      for(var i = 0; i < this.smokeMaxParticles; i++){
          this.fireParticles.vertices.push(new THREE.Vector3(0,0,0));
@@ -577,7 +580,7 @@ function Bonfire(properties){
          //initialize smoke system
          var currentAlive = this.smokeParticlesAlive;
          var nextAlive = currentAlive + smokeCnt;
-         nextAlive = (this.smokeParticlesAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
+         nextAlive = (nextAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
          for(var i = currentAlive; i < nextAlive; i++){
              this.smokeParticles.vertices[i].set(0,0,0);
              this.smokeParticles.vertices[i].creation = Date.now();
@@ -591,7 +594,7 @@ function Bonfire(properties){
          //initialize fire system
          var currentAlive = this.fireParticlesAlive;
          var nextAlive = currentAlive + fireCnt;
-         nextAlive = (this.fireParticlesAlive > this.fireMaxParticles) ? this.fireMaxParticles : nextAlive;
+         nextAlive = (nextAlive > this.fireMaxParticles) ? this.fireMaxParticles : nextAlive;
          for(var i = currentAlive; i < nextAlive; i++){
              this.fireParticles.vertices[i].set(0,0,0);
              this.fireParticles.vertices[i].creation = Date.now();
@@ -642,8 +645,21 @@ function Bonfire(properties){
          
          this.smokeSystem.geometry.verticesNeedUpdate = true;
          this.fireSystem.geometry.verticesNeedUpdate = true;
+         this.burnBabyBurn();
          this.prevTime = curTime;
      };
+     
+     this.burnBabyBurn = function(){
+         var current = Date.now();
+         if((current - this.lastFireCreated) > 1000/this.properties.fireFrequency){
+             this.initFireParticles(1);
+             this.lastFireCreated = current;
+         }
+         if((current - this.lastSmokeCreated) > 1000/this.properties.smokeFrequency){
+             this.initSmokeParticles(1);
+             this.lastSmokeCreated = current;
+         }
+     }
      
      this.setPosition = function(x, y, z){
          this.bonfireLogs.position.x = x;
