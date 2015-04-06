@@ -117,7 +117,9 @@ $(function(){
 	    {
 		map: THREE.ImageUtils.loadTexture("clouds.png"),
 		transparent: true,
-		side : THREE.DoubleSide
+		side : THREE.DoubleSide,
+                depthWrite : false,
+                depthTest : true,
 	    }
 	));
         //we alter the rendering order of the items with rendering depth
@@ -125,7 +127,6 @@ $(function(){
         skySphereMesh.position = camObject.position;
         scene.add(skySphereMesh);
     }
-    
     loader.load("meshes/sky.js", handler);
 
     // load skybox materials 
@@ -180,7 +181,7 @@ $(function(){
     });
     
     
-    //scene.add(ground);
+    scene.add(ground);
 
 
     
@@ -511,7 +512,7 @@ function Bonfire(properties){
          size : 3
      });
      this.smokeSystem = new THREE.ParticleSystem(this.smokeParticles, this.smokeMaterial);
-     this.smokeSystem.renderDepth = 0;
+     //this.smokeSystem.renderDepth = 1;
      this.smokeSystem.sortParticles = false;
      //no particles available by default
      this.smokeSystem.geometry.__webglParticleCount = 0;
@@ -536,7 +537,7 @@ function Bonfire(properties){
          size : 1
      });
      this.fireSystem = new THREE.ParticleSystem(this.fireParticles, this.fireMaterial);
-     this.fireSystem.renderDepth = 0;
+     //this.fireSystem.renderDepth = 1;
      this.fireSystem.sortParticles = false;
      //no particles available by default
      this.fireSystem.geometry.__webglParticleCount = 0;
@@ -656,11 +657,11 @@ function Tree(type){
                     transparent : true,
                     side : THREE.DoubleSide,
                     depthWrite : false,
-                    depthTest : true
+                    depthTestw : true
                 })
         );
         this.treeObject.add(this.planes[i]);
-        this.planes[i].renderDepth = 1000;
+        //this.planes[i].renderDepth = 1;
     }
     this.planes[0].rotation.y = Math.PI/2;
     this.treeObject.position.y = 2.5;
