@@ -51,6 +51,7 @@ var fps = {
 var spotLight = null;
 var spotLightObj = null;
 var ambientLight = null;
+var skySphereMesh = null;
 
 $(function(){
 
@@ -109,66 +110,23 @@ $(function(){
 
     scene.add( spotLight );
     
-    box = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), new THREE.MeshLambertMaterial(
-	    {
-		map: THREE.ImageUtils.loadTexture("rock.jpg"),
-		transparent: true
-		
-	    }
-	));
-    scene.add(box);
-    box.position.x = 5.0;
-    box.position.y = 2.0;
-
-    // create cube  material
-    var material =
-	new THREE.MeshBasicMaterial(
-	    {
-		color: 0xFFFFFF,
-		
-	    });
-    
     var loader = new THREE.JSONLoader();
 
     function handler(geometry, materials) {
-        var mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial(
+        skySphereMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(
 	    {
-		map: THREE.ImageUtils.loadTexture("rock.jpg"),
-		transparent: true
-		
+		map: THREE.ImageUtils.loadTexture("clouds.png"),
+		transparent: true,
+		side : THREE.DoubleSide
 	    }
 	));
         //we alter the rendering order of the items with rendering depth
-        mesh.renderDepth = 2000;
-	ruins.push(mesh);
- 
-	checkIsAllLoaded();
+        skySphereMesh.renderDepth = 5000;
+        skySphereMesh.position = camObject.position;
+        scene.add(skySphereMesh);
     }
     
-    function checkIsAllLoaded(){
-	if ( ruins.length == 5 ) {
-	    $.each(ruins, function(i,mesh){
-		scene.add(mesh);
-		// mesh is rotated around x-axis
-		mesh.rotation.x = Math.PI/2.0;
-	    });
-	    // arcs
-	    ruins[0].position.z = 13;
-	    // corner
-	    ruins[1].position.x = 13;
-
-	    // crumbled place
-	    ruins[2].position.x = -13;
-	    
-
-	    ruins[3].position.z = -13;
-	}
-    }
-    loader.load("meshes/ruins30.js", handler);    
-    loader.load("meshes/ruins31.js", handler);
-    loader.load("meshes/ruins33.js", handler);
-    loader.load("meshes/ruins34.js", handler); 
-    loader.load("meshes/ruins35.js", handler);
+    loader.load("meshes/sky.js", handler);
 
     // load skybox materials 
     var skyboxMaterials = [];
@@ -212,7 +170,7 @@ $(function(){
 				     transparent: true
 				 }));
 
-    
+    ground.renderDepth = 2000;
     // Do a little magic with vertex coordinates so ground looks more interesting
     $.each(ground.geometry.faceVertexUvs[0], function(i,d){
 
@@ -222,7 +180,7 @@ $(function(){
     });
     
     
-    scene.add(ground);
+    //scene.add(ground);
 
 
     
@@ -280,6 +238,7 @@ $(function(){
 	.attr("width", fps.width)
 	.attr("height", fps.height);
 
+    //CREATE BONFIRE
     bonfire = new Bonfire({
         bonfirePosition : new THREE.Vector3(0, 0, 0),
         
@@ -302,6 +261,11 @@ $(function(){
     bonfire.initSmokeParticles(1);
     scene.add(bonfire.smokeSystem);
     scene.add(bonfire.fireSystem);
+    
+    //CREATE TREES
+    var tree = new Tree("PINE");
+    tree.treeObject.position.x = 10;
+    scene.add(tree.treeObject);
 
 });
 
@@ -504,7 +468,8 @@ function Bonfire(properties){
          this.logs.push(new THREE.Mesh(
                  new THREE.CubeGeometry(0.5, 0.1, 0.1),
                  new THREE.MeshPhongMaterial({
-                     color : new THREE.Color(0x691F01)
+                     color : new THREE.Color(0x691F01),
+                     transparent : true,
                  })
          ));
          this.bonfireLogs.add(this.logs[i]);
@@ -632,7 +597,6 @@ function Bonfire(properties){
              if(particle !== undefined){
                  particle.add(this.properties.fireVelocity.clone().multiplyScalar(delta));
                  particle.energy -= this.properties.fireEnergyDrain * delta;
-                 console.debug(particle.fireEnergy);
                  //check if dead
                  if(particle.energy <= 0){
                      var deadParticle = this.fireSystem.geometry.vertices.splice(i, 1);
@@ -673,3 +637,33 @@ function Bonfire(properties){
          this.smokeSystem.position.z = z;
      }
 };
+
+function Tree(type){
+    this.treeObject = new THREE.Object3D();
+    this.image = null;
+    if(type === "PINE"){
+        this.image = THREE.ImageUtils.loadTexture("pine.png");
+    } else if(type==="LIME"){
+        this.image = THREE.ImageUtils.loadTexture("lime.png");
+    }
+    this.image.flipY = false;
+    this.planes = [];
+    for(var i = 0; i < 2; i++){
+        this.planes[i] = new THREE.Mesh(
+                new THREE.PlaneGeometry(5, 5),
+                new THREE.MeshPhongMaterial({
+                    map : this.image,
+                    transparent : true,
+                    side : THREE.DoubleSide,
+                    depthWrite : false,
+                    depthTest : true
+                })
+        );
+        this.treeObject.add(this.planes[i]);
+        this.planes[i].renderDepth = 1000;
+    }
+    this.planes[0].rotation.y = Math.PI/2;
+    this.treeObject.position.y = 2.5;
+    
+}
+    
