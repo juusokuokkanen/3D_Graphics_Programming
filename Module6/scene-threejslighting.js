@@ -1,7 +1,8 @@
 /*************************************************************
   3D Graphics Programming
   anssi.grohn@karelia.fi 2013
-  Code template for module 5 assignment (lighting)
+  Skybox and lighting demo demo code with Three.js.
+  (with FPS counter, too!)
  *************************************************************/
 // Parameters
 var width = 800,
@@ -14,7 +15,6 @@ var width = 800,
 var renderer = null;
 var scene = null;
 var camera = null;
-
 
 var mouse = {
     down: false,
@@ -37,6 +37,8 @@ var thumb;
 var indexfinger;
 var middlefinger;
 var pinky;
+var box;
+var bonfire = null;
 
 var fps = {
     width: 100,
@@ -49,12 +51,6 @@ var fps = {
 var spotLight = null;
 var spotLightObj = null;
 var ambientLight = null;
-
-// for easier conversion
-function colorToVec4(color){
-    var res = new THREE.Vector4(color.r, color.g, color.b, color.a);
-    return res;
-}
 
 $(function(){
 
@@ -87,69 +83,65 @@ $(function(){
     // directional light for the moon
     var directionalLight = new THREE.DirectionalLight( 0x88aaff, 1.0 ); 
     directionalLight.position.set( 1, 1, -1 ); 
-
     scene.add( directionalLight );
 
     // Add ambient light, simulating surround scattering light
     ambientLight = new THREE.AmbientLight(0x282a2f);
     scene.add( ambientLight  );
-    
 
     scene.fog = new THREE.Fog(0x172747, 1.0, 50.0);
-    // Add our flashlight
+
+    // Add our "flashlight"
     var distance  = 6.0;
     var intensity = 2.0;
     spotLight = new THREE.SpotLight( 0xffffff, 
 				     intensity,
 				     distance ); 
+    // shadows are complex topic, not covered now.
     spotLight.castShadow = false; 
     spotLight.position = new THREE.Vector3(0,0,1);
+    // where spotlight is "looking"
     spotLight.target = spotLightObj;
+    // spotlight exponent "spread"
     spotLight.exponent = 188.1;
+    // spotlight cone angle
     spotLight.angle = 0.21;
+
     scene.add( spotLight );
+    
+    box = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), new THREE.MeshLambertMaterial(
+	    {
+		map: THREE.ImageUtils.loadTexture("rock.jpg"),
+		transparent: true
+		
+	    }
+	));
+    scene.add(box);
+    box.position.x = 5.0;
+    box.position.y = 2.0;
 
     // create cube  material
-    var material =
+    var material =111
 	new THREE.MeshBasicMaterial(
 	    {
 		color: 0xFFFFFF,
+		
 	    });
     
     var loader = new THREE.JSONLoader();
-    // Create ground from cube and some rock
-    var rockTexture = THREE.ImageUtils.loadTexture("rock.jpg");
-
-    // texture wrapping mode set as repeating
-    rockTexture.wrapS = THREE.RepeatWrapping;
-    rockTexture.wrapT = THREE.RepeatWrapping;
-    var customPhongShader = new THREE.ShaderMaterial({
-	vertexShader: $("#light-vs").text(),
-	fragmentShader: $("#light-fs").text(),
-	transparent: true,
-	uniforms: { 
-	    map: {
-		type: 't', 
-		value: rockTexture
-	    },
-	    // setting struct field happens by using dot notation. 
-	    // Each field needs to be set separately. 
-	    "dirlight.pos": {
-		type: 'v3',
-		value: directionalLight.position
-	    },
-	   
-	    u_ambient: { 
-		type: 'v4',
-		value: colorToVec4(ambientLight.color) /* global ambient */
-	    }
-	}
-    });
 
     function handler(geometry, materials) {
-        var mesh = new THREE.Mesh(geometry, customPhongShader);
+        var mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial(
+	    {
+		map: THREE.ImageUtils.loadTexture("rock.jpg"),
+		transparent: true
+		
+	    }
+	));
+        //we alter the rendering order of the items with rendering depth
         mesh.renderDepth = 2000;
 	ruins.push(mesh);
+ 
 	checkIsAllLoaded();
     }
     
@@ -157,9 +149,8 @@ $(function(){
 	if ( ruins.length == 5 ) {
 	    $.each(ruins, function(i,mesh){
 		scene.add(mesh);
-		// mesh is rotated around 
+		// mesh is rotated around x-axis
 		mesh.rotation.x = Math.PI/2.0;
-
 	    });
 	    // arcs
 	    ruins[0].position.z = 13;
@@ -179,8 +170,7 @@ $(function(){
     loader.load("meshes/ruins34.js", handler); 
     loader.load("meshes/ruins35.js", handler);
 
-
-
+    // load skybox materials 
     var skyboxMaterials = [];
     skyboxMaterials.push ( new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture("./nightsky/nightsky_west.png")}));
     skyboxMaterials.push ( new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture("./nightsky/nightsky_east.png")}));
@@ -195,7 +185,6 @@ $(function(){
     });
     var sbmfm = new THREE.MeshFaceMaterial(skyboxMaterials);
     sbmfm.depthWrite = false;
-    
     // Create a new mesh with cube geometry 
     var skybox = new THREE.Mesh(
 	new THREE.CubeGeometry( 1,1,1,1,1,1 ), 
@@ -203,12 +192,25 @@ $(function(){
     );
 
     skybox.position = camObject.position;
-    skybox.renderDepth = 5000;
     scene.add(skybox);
+    
+    // Create ground from cube and some rock
+    var rockTexture = THREE.ImageUtils.loadTexture("rock.jpg");
+
+    // texture wrapping mode set as repeating
+    rockTexture.wrapS = THREE.RepeatWrapping;
+    rockTexture.wrapT = THREE.RepeatWrapping;
+
+
+
 
 
     // Construct a mesh object
-    var ground = new THREE.Mesh( new THREE.CubeGeometry(100,0.2,100,1,1,1), customPhongShader);
+    var ground = new THREE.Mesh( new THREE.CubeGeometry(100,0.2,100,1,1,1),
+				 new THREE.MeshPhongMaterial({
+				     map: rockTexture,
+				     transparent: true
+				 }));
 
     
     // Do a little magic with vertex coordinates so ground looks more interesting
@@ -222,70 +224,7 @@ $(function(){
     
     scene.add(ground);
 
-    
-    function createArm(){
 
-        shoulderRotationJoint = new THREE.Object3D();
-        shoulderRotationJoint.position.y = 0.5;
-        shoulderTiltingJoint = new THREE.Mesh( 
-            new THREE.SphereGeometry(0.2,10,10), 
-            new THREE.MeshLambertMaterial({ color: 0xFF0000, transparent: true})
-        );
-        upperArm  = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
-                                    new THREE.MeshLambertMaterial({ color: 0x00FF00, transparent: true}));
-        upperArm.position.y = 0.45;
-        elbowJoint = new THREE.Mesh( 
-            new THREE.SphereGeometry(0.12,10,10), 
-            new THREE.MeshLambertMaterial({ color: 0xFF00FF, transparent: true})
-        );
-        lowerArm = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
-                                    new THREE.MeshLambertMaterial({ color: 0xFFFF00, transparent: true}));
-
-
-        wrist = new THREE.Object3D();
-        hand = new THREE.Mesh( new THREE.CubeGeometry(0.25,0.25,0.25),
-                               new THREE.MeshLambertMaterial({ color: 0x0000FF, transparent: true}));
-        shoulderRotationJoint.add(shoulderTiltingJoint);
-        shoulderTiltingJoint.add(upperArm);
-
-        scene.add(shoulderRotationJoint);
-        shoulderRotationJoint.add(shoulderTiltingJoint);
-        shoulderTiltingJoint.add(upperArm);
-        upperArm.add(elbowJoint);
-        elbowJoint.position.y = 0.25;
-        elbowJoint.add(lowerArm);
-        lowerArm.position.y = 0.25;
-        lowerArm.add(wrist);
-        wrist.position.y = 0.25;
-        wrist.add(hand);
-        hand.position.y = 0.05;
-        thumb =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                 new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-        hand.add(thumb);
-        thumb.position.x = 0.2;
-        thumb.rotation.z = 2.0;
-
-
-        indexfinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                       new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-        hand.add(indexfinger);
-        indexfinger.position.x = 0.10;
-        indexfinger.position.y = 0.2;
-
-
-        middlefinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                        new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-        hand.add(middlefinger);
-        middlefinger.position.x = 0.0;
-        middlefinger.position.y = 0.2;
-
-        pinky =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                        new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-        hand.add(pinky);
-        pinky.position.x = -0.1;
-        pinky.position.y = 0.2;
-    };
-    createArm();
     
     fps.time = new Date();
     // request frame update and call update-function once it comes
@@ -335,17 +274,91 @@ $(function(){
     $.each(supported, function(i,d){
 	console.log(d);
     });
-    //Create SVG element
+    //Create SVG element (ain't HTML5 grand stuff?)
     fps.svg = d3.select("#fps")
 	.append("svg")
 	.attr("width", fps.width)
 	.attr("height", fps.height);
 
+    addArm();
+    bonfire = new Bonfire({
+        bonfirePosition : new THREE.Vector3(0, 0, 0),
+        smokeMaxParticles : 10,
+        fireMaxParticles : 10,
+        
+    });
+    bonfire.initBonfireParticles(0, 1);
+    scene.add(bonfire.smokeSystem);
+    scene.add(bonfire.fireSystem);
+
 });
+
+function addArm(){
+    shoulderRotationJoint = new THREE.Object3D();
+    shoulderRotationJoint.position.y = 0.5;
+    shoulderTiltingJoint = new THREE.Mesh( 
+        new THREE.SphereGeometry(0.2,10,10), 
+        new THREE.MeshLambertMaterial({ color: 0xFF0000, transparent: true})
+    );
+    upperArm  = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
+                                new THREE.MeshLambertMaterial({ color: 0x00FF00, transparent: true}));
+    upperArm.position.y = 0.45;
+    elbowJoint = new THREE.Mesh( 
+        new THREE.SphereGeometry(0.12,10,10), 
+        new THREE.MeshLambertMaterial({ color: 0xFF00FF, transparent: true})
+    );
+    lowerArm = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
+                                new THREE.MeshLambertMaterial({ color: 0xFFFF00, transparent: true}));
+
+
+    wrist = new THREE.Object3D();
+    hand = new THREE.Mesh( new THREE.CubeGeometry(0.25,0.25,0.25),
+                           new THREE.MeshLambertMaterial({ color: 0x0000FF, transparent: true}));
+    shoulderRotationJoint.add(shoulderTiltingJoint);
+    shoulderTiltingJoint.add(upperArm);
+
+    scene.add(shoulderRotationJoint);
+    shoulderRotationJoint.add(shoulderTiltingJoint);
+    shoulderTiltingJoint.add(upperArm);
+    upperArm.add(elbowJoint);
+    elbowJoint.position.y = 0.25;
+    elbowJoint.add(lowerArm);
+    lowerArm.position.y = 0.25;
+    lowerArm.add(wrist);
+    wrist.position.y = 0.25;
+    wrist.add(hand);
+    hand.position.y = 0.05;
+    thumb =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
+                             new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
+    hand.add(thumb);
+    thumb.position.x = 0.2;
+    thumb.rotation.z = 2.0;
+
+
+    indexfinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
+                                   new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
+    hand.add(indexfinger);
+    indexfinger.position.x = 0.10;
+    indexfinger.position.y = 0.2;
+
+
+    middlefinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
+                                    new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
+    hand.add(middlefinger);
+    middlefinger.position.x = 0.0;
+    middlefinger.position.y = 0.2;
+
+    pinky =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
+                                    new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
+    hand.add(pinky);
+    pinky.position.x = -0.1;
+    pinky.position.y = 0.2;
+}
 
 var angle = 0.0;
 var movement = 0.0;
 var moving = false;
+
 function update(){
 
     // render everything 
@@ -408,6 +421,9 @@ function update(){
 
     shoulderTiltingJoint.rotation.z = Math.cos(12*angle);
     wrist.rotation.x = Math.sin(25*angle);
+    
+    bonfire.updateBonfireParticles();
+    
     // request another frame update
     requestAnimationFrame(update);
     
@@ -425,9 +441,8 @@ function update(){
 	displayFPS();
     }
     
-    var bonfire = new Bonfire();
-    scene.add(bonfire.system);
 }
+
   
 // for displaying fps meter 
 function displayFPS(){
@@ -466,21 +481,74 @@ function displayFPS(){
 	.attr("x", 50)
 	.attr("y", 25)
 	.attr("fill", "#FFFFFF");
-} 
+}
 
-function Bonfire(){
-     this.particles = new THREE.Geometry();
-     this.particles.vertices.push(new THREE.Vector3(-1.0, 1.0, 0));
-     this.fireMaterial = new THREE.ParticleBasicMaterial({
+function Bonfire(properties){
+     //we create two systems: one for somke and one for fire particles
+     //smokeSystem
+     this.properties = properties;
+     this.smokeMaxParticles = this.properties.smokeMaxParticles;
+     this.smokeParticles = new THREE.Geometry();
+     //make initial particle vertices
+     for(var i = 0; i < this.smokeMaxParticles; i++){
+         this.smokeParticles.vertices.push(new THREE.Vector3(0,0,0));
+     }
+     this.smokeParticlesAlive = 0;
+     this.smokeParticles.vertices.push(new THREE.Vector3(0.0, 0.0, 0.0));
+     this.smokeMaterial = new THREE.ParticleBasicMaterial({
          map : THREE.ImageUtils.loadTexture("smoke.png"),
          transparent: true,
+         depthWrite : false,
          blending: THREE.AdditiveBlending,
          blendingEquation: THREE.AddEquation,
          blendSrc : THREE.SrcAlphaFactor,
          blendDst : THREE.OneFactor,
          size : 1
      });
-     this.system = new THREE.ParticleSystem(this.particles, this.fireMaterial);
-     this.system.renderDepth = 0;
-     this.system.sortParticles = false;
-    };
+     this.smokeSystem = new THREE.ParticleSystem(this.smokeParticles, this.smokeMaterial);
+     this.smokeSystem.renderDepth = 0;
+     this.smokeSystem.sortParticles = false;
+     //no particles available by default
+     this.smokeSystem.geometry.__webglParticleCount = 0;
+     
+     this.initBonfireParticles = function(fireCnt, smokeCnt){
+         //initialize smoke system
+         var currentAlive = this.smokeParticlesAlive;
+         var nextAlive = currentAlive + smokeCnt;
+         nextAlive = (this.smokeParticlesAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
+         for(var i = currentAlive; i < nextAlive; i++){
+             this.smokeParticles.vertices[i].set(0,0,0);
+             this.smokeParticlesAlive++;
+         }
+         this.smokeSystem.geometry.verticesNeedUpdate = true;
+     };
+     
+     this.updateBonfireParticles = function(){
+         this.smokeSystem.geometry.__webglParticleCount = this.smokeParticlesAlive;
+         var currentAlive = this.smokeParticlesAlive;
+         for(var i = 0; i < currentAlive; i++){
+             if(this.smokeSystem.geometry.vertices[i] !== undefined){
+                 this.smokeSystem.geometry.vertices[i].add(new THREE.Vector3(0, 0.01, 0));
+             }
+         }
+         this.smokeSystem.geometry.verticesNeedUpdate = true;
+     };
+     
+     //fire system
+     this.fireParticles = new THREE.Geometry();
+     this.fireParticlesAlive = 0;
+     this.fireParticles.vertices.push(new THREE.Vector3(1.0, 1.0, 0));
+     this.fireMaterial = new THREE.ParticleBasicMaterial({
+         map : THREE.ImageUtils.loadTexture("fire.png"),
+         transparent: true,
+         depthWrite : false,
+         blending: THREE.CustomBlending,
+         blendingEquation: THREE.AddEquation,
+         blendSrc : THREE.SrcAlphaFactor,
+         blendDst : THREE.OneFactor,
+         size : 1
+     });
+     this.fireSystem = new THREE.ParticleSystem(this.fireParticles, this.fireMaterial);
+     this.fireSystem.renderDepth = 0;
+     this.fireSystem.sortParticles = false;
+};
