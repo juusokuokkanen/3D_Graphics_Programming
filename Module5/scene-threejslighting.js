@@ -37,6 +37,7 @@ var thumb;
 var indexfinger;
 var middlefinger;
 var pinky;
+var box;
 
 var fps = {
     width: 100,
@@ -106,9 +107,20 @@ $(function(){
     spotLight.angle = 0.21;
 
     scene.add( spotLight );
+    
+    box = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), new THREE.MeshLambertMaterial(
+	    {
+		map: THREE.ImageUtils.loadTexture("rock.jpg"),
+		transparent: true
+		
+	    }
+	));
+    scene.add(box);
+    box.position.x = 5.0;
+    box.position.y = 2.0;
 
     // create cube  material
-    var material =
+    var material =111
 	new THREE.MeshBasicMaterial(
 	    {
 		color: 0xFFFFFF,

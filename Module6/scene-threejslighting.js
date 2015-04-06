@@ -121,7 +121,7 @@ $(function(){
     box.position.y = 2.0;
 
     // create cube  material
-    var material =111
+    var material =
 	new THREE.MeshBasicMaterial(
 	    {
 		color: 0xFFFFFF,
@@ -283,11 +283,18 @@ $(function(){
     addArm();
     bonfire = new Bonfire({
         bonfirePosition : new THREE.Vector3(0, 0, 0),
+        //smoke
+        smokeVelocity : new THREE.Vector3(0, 0.5, 0),
+        smokeEnergy : 100,
+        smokeEnergyDrain : 20,
         smokeMaxParticles : 10,
-        fireMaxParticles : 10,
-        
+        //fire
+        fireVelocity : new THREE.Vector3(0, 1, 0),
+        fireEnergy : 100,
+        fireEnergyDrain : 150,
+        fireMaxParticles : 4
     });
-    bonfire.initBonfireParticles(0, 1);
+    bonfire.initSmokeParticles(1);
     scene.add(bonfire.smokeSystem);
     scene.add(bonfire.fireSystem);
 
@@ -423,7 +430,6 @@ function update(){
     wrist.rotation.x = Math.sin(25*angle);
     
     bonfire.updateBonfireParticles();
-    
     // request another frame update
     requestAnimationFrame(update);
     
@@ -485,8 +491,41 @@ function displayFPS(){
 
 function Bonfire(properties){
      //we create two systems: one for somke and one for fire particles
-     //smokeSystem
+     this.prevTime = Date.now();
      this.properties = properties;
+     
+     //create logs
+     this.bonfireLogs = new THREE.Object3D();
+     
+     //Create a bonfire log meshes that will be added to bonfireLogs Object3D
+     this.logs = [];
+     for(var i = 0; i < 5; i++){
+         this.logs.push(new THREE.Mesh(
+                 new THREE.CubeGeometry(0.5, 0.1, 0.1),
+                 new THREE.MeshPhongMaterial({
+                     color : new THREE.Color(0x691F01)
+                 })
+         ));
+         this.bonfireLogs.add(this.logs[i]);
+         this.logs[i].renderDepth = 1000;
+         this.logs[i].position.y = 0.2;
+         this.logs[i].rotation.z = Math.PI/4;
+     }
+     this.logs[0].position.x = -0.15;
+     this.logs[1].rotation.y = ((2*Math.PI)/5)*1;
+     this.logs[1].position.x = -0.05;
+     this.logs[1].position.z = 0.2;
+     this.logs[2].rotation.y = ((2*Math.PI)/5)*2;
+     this.logs[2].position.x = 0.25;
+     this.logs[2].position.z = 0.1;
+     this.logs[3].rotation.y = ((2*Math.PI)/5)*3;
+     this.logs[3].position.x = 0.15;
+     this.logs[3].position.z = -0.1;
+     this.logs[4].rotation.y = ((2*Math.PI)/5)*4;
+     this.logs[4].position.x = -0.05;
+     this.logs[4].position.z = -0.2;
+     scene.add(this.bonfireLogs);
+     //smokeSystem
      this.smokeMaxParticles = this.properties.smokeMaxParticles;
      this.smokeParticles = new THREE.Geometry();
      //make initial particle vertices
@@ -494,7 +533,6 @@ function Bonfire(properties){
          this.smokeParticles.vertices.push(new THREE.Vector3(0,0,0));
      }
      this.smokeParticlesAlive = 0;
-     this.smokeParticles.vertices.push(new THREE.Vector3(0.0, 0.0, 0.0));
      this.smokeMaterial = new THREE.ParticleBasicMaterial({
          map : THREE.ImageUtils.loadTexture("smoke.png"),
          transparent: true,
@@ -511,33 +549,14 @@ function Bonfire(properties){
      //no particles available by default
      this.smokeSystem.geometry.__webglParticleCount = 0;
      
-     this.initBonfireParticles = function(fireCnt, smokeCnt){
-         //initialize smoke system
-         var currentAlive = this.smokeParticlesAlive;
-         var nextAlive = currentAlive + smokeCnt;
-         nextAlive = (this.smokeParticlesAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
-         for(var i = currentAlive; i < nextAlive; i++){
-             this.smokeParticles.vertices[i].set(0,0,0);
-             this.smokeParticlesAlive++;
-         }
-         this.smokeSystem.geometry.verticesNeedUpdate = true;
-     };
-     
-     this.updateBonfireParticles = function(){
-         this.smokeSystem.geometry.__webglParticleCount = this.smokeParticlesAlive;
-         var currentAlive = this.smokeParticlesAlive;
-         for(var i = 0; i < currentAlive; i++){
-             if(this.smokeSystem.geometry.vertices[i] !== undefined){
-                 this.smokeSystem.geometry.vertices[i].add(new THREE.Vector3(0, 0.01, 0));
-             }
-         }
-         this.smokeSystem.geometry.verticesNeedUpdate = true;
-     };
      
      //fire system
      this.fireParticles = new THREE.Geometry();
      this.fireParticlesAlive = 0;
-     this.fireParticles.vertices.push(new THREE.Vector3(1.0, 1.0, 0));
+     //make initial particle vertices
+     for(var i = 0; i < this.smokeMaxParticles; i++){
+         this.fireParticles.vertices.push(new THREE.Vector3(0,0,0));
+     }
      this.fireMaterial = new THREE.ParticleBasicMaterial({
          map : THREE.ImageUtils.loadTexture("fire.png"),
          transparent: true,
@@ -551,4 +570,90 @@ function Bonfire(properties){
      this.fireSystem = new THREE.ParticleSystem(this.fireParticles, this.fireMaterial);
      this.fireSystem.renderDepth = 0;
      this.fireSystem.sortParticles = false;
+     //no particles available by default
+     this.fireSystem.geometry.__webglParticleCount = 0;
+     
+     this.initSmokeParticles = function(smokeCnt){
+         //initialize smoke system
+         var currentAlive = this.smokeParticlesAlive;
+         var nextAlive = currentAlive + smokeCnt;
+         nextAlive = (this.smokeParticlesAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
+         for(var i = currentAlive; i < nextAlive; i++){
+             this.smokeParticles.vertices[i].set(0,0,0);
+             this.smokeParticles.vertices[i].creation = Date.now();
+             this.smokeParticles.vertices[i].energy = this.properties.smokeEnergy;
+             this.smokeParticlesAlive++;
+         }
+         this.smokeSystem.geometry.verticesNeedUpdate = true;
+     };
+     
+     this.initFireParticles = function(fireCnt){
+         //initialize fire system
+         var currentAlive = this.fireParticlesAlive;
+         var nextAlive = currentAlive + fireCnt;
+         nextAlive = (this.fireParticlesAlive > this.fireMaxParticles) ? this.fireMaxParticles : nextAlive;
+         for(var i = currentAlive; i < nextAlive; i++){
+             this.fireParticles.vertices[i].set(0,0,0);
+             this.fireParticles.vertices[i].creation = Date.now();
+             this.fireParticles.vertices[i].energy = this.properties.fireEnergy;
+             this.fireParticlesAlive++;
+         }
+         this.fireSystem.geometry.verticesNeedUpdate = true;
+     };
+     
+     this.updateBonfireParticles = function(){
+         var curTime = Date.now();
+         var delta = (curTime - this.prevTime)/1000.0;
+         this.smokeSystem.geometry.__webglParticleCount = this.smokeParticlesAlive;
+         var currentAlive = this.smokeParticlesAlive;
+         for(var i = 0; i < currentAlive; i++){
+             var particle = this.smokeSystem.geometry.vertices[i];
+             if(particle !== undefined){
+                 particle.add(this.properties.smokeVelocity.clone().multiplyScalar(delta));
+                 particle.energy -= this.properties.smokeEnergyDrain * delta;
+                 //check if dead
+                 if(particle.energy <= 0){
+                     var deadParticle = this.smokeSystem.geometry.vertices.splice(i, 1);
+                     this.smokeSystem.geometry.vertices.push(deadParticle[0]);
+                     this.smokeParticlesAlive--;
+                     currentAlive = this.smokeParticlesAlive;
+                 }
+             }
+         }
+         
+         
+         this.fireSystem.geometry.__webglParticleCount = this.fireParticlesAlive;
+         currentAlive = this.fireParticlesAlive;
+         for(var i = 0; i < currentAlive; i++){
+             var particle = this.fireSystem.geometry.vertices[i];
+             if(particle !== undefined){
+                 particle.add(this.properties.fireVelocity.clone().multiplyScalar(delta));
+                 particle.energy -= this.properties.fireEnergyDrain * delta;
+                 console.debug(particle.fireEnergy);
+                 //check if dead
+                 if(particle.energy <= 0){
+                     var deadParticle = this.fireSystem.geometry.vertices.splice(i, 1);
+                     this.fireSystem.geometry.vertices.push(deadParticle[0]);
+                     this.fireParticlesAlive--;
+                     currentAlive = this.fireParticlesAlive;
+                 }
+             }
+         }
+         
+         this.smokeSystem.geometry.verticesNeedUpdate = true;
+         this.fireSystem.geometry.verticesNeedUpdate = true;
+         this.prevTime = curTime;
+     };
+     
+     this.setPosition = function(x, y, z){
+         this.bonfireLogs.position.x = x;
+         this.bonfireLogs.position.y = y;
+         this.bonfireLogs.position.z = z;
+         this.fireSystem.position.x = x;
+         this.fireSystem.position.y = y;
+         this.fireSystem.position.z = z;
+         this.smokeSystem.position.x = x;
+         this.smokeSystem.position.y = y;
+         this.smokeSystem.position.z = z;
+     }
 };
