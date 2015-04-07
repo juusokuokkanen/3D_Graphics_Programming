@@ -39,6 +39,7 @@ var middlefinger;
 var pinky;
 var box;
 var bonfire = null;
+var trees = [];
 
 var fps = {
     width: 100,
@@ -123,7 +124,7 @@ $(function(){
 	    }
 	));
         //we alter the rendering order of the items with rendering depth
-        skySphereMesh.renderDepth = 5000;
+        skySphereMesh.renderDepth = 4000;
         skySphereMesh.position = camObject.position;
         scene.add(skySphereMesh);
     }
@@ -229,7 +230,7 @@ $(function(){
     var gl = renderer.context;
     var supported = gl.getSupportedExtensions();
 
-    console.log("**** Supported extensions ***'");
+    console.log("**** Supported extensions ***");
     $.each(supported, function(i,d){
 	console.log(d);
     });
@@ -262,75 +263,33 @@ $(function(){
     bonfire.initSmokeParticles(1);
     scene.add(bonfire.smokeSystem);
     scene.add(bonfire.fireSystem);
-    
+    renderer.sortObjects = true;
     //CREATE TREES
-    var tree = new Tree("PINE");
-    tree.treeObject.position.x = 10;
-    scene.add(tree.treeObject);
-
+    function addTree(x, z, type){
+        var tree = new Tree(type);
+        tree.treeObject.position.x = x;
+        tree.treeObject.position.z = z;
+        scene.add(tree.treeObject);
+        return tree;
+    }
+    trees.push(addTree(3, 5, "PINE"));
+    trees.push(addTree(-3, 5, "LIME"));
+    trees.push(addTree(13, 6, "PINE"));
+    trees.push(addTree(14, -5, "LIME"));
+    trees.push(addTree(-6, -8, "PINE"));
+    trees.push(addTree(11, 10, "LIME"));
+    trees.push(addTree(-6, 18, "PINE"));
+    trees.push(addTree(2, -7, "LIME"));
+    trees.push(addTree(0, 15, "PINE"));
+    trees.push(addTree(-8, -1, "LIME"));
+    trees.push(addTree(1, 17, "PINE"));
+    trees.push(addTree(1, 10, "LIME"));
+    trees.push(addTree(15, 19, "PINE"));
+    trees.push(addTree(-7, 20, "LIME"));
+    trees.push(addTree(-15, 13, "PINE"));
+    trees.push(addTree(3, 18, "LIME"));
+    
 });
-
-function addArm(){
-    shoulderRotationJoint = new THREE.Object3D();
-    shoulderRotationJoint.position.y = 0.5;
-    shoulderTiltingJoint = new THREE.Mesh( 
-        new THREE.SphereGeometry(0.2,10,10), 
-        new THREE.MeshLambertMaterial({ color: 0xFF0000, transparent: true})
-    );
-    upperArm  = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
-                                new THREE.MeshLambertMaterial({ color: 0x00FF00, transparent: true}));
-    upperArm.position.y = 0.45;
-    elbowJoint = new THREE.Mesh( 
-        new THREE.SphereGeometry(0.12,10,10), 
-        new THREE.MeshLambertMaterial({ color: 0xFF00FF, transparent: true})
-    );
-    lowerArm = new THREE.Mesh( new THREE.CubeGeometry(0.125,0.5,0.125),
-                                new THREE.MeshLambertMaterial({ color: 0xFFFF00, transparent: true}));
-
-
-    wrist = new THREE.Object3D();
-    hand = new THREE.Mesh( new THREE.CubeGeometry(0.25,0.25,0.25),
-                           new THREE.MeshLambertMaterial({ color: 0x0000FF, transparent: true}));
-    shoulderRotationJoint.add(shoulderTiltingJoint);
-    shoulderTiltingJoint.add(upperArm);
-
-    scene.add(shoulderRotationJoint);
-    shoulderRotationJoint.add(shoulderTiltingJoint);
-    shoulderTiltingJoint.add(upperArm);
-    upperArm.add(elbowJoint);
-    elbowJoint.position.y = 0.25;
-    elbowJoint.add(lowerArm);
-    lowerArm.position.y = 0.25;
-    lowerArm.add(wrist);
-    wrist.position.y = 0.25;
-    wrist.add(hand);
-    hand.position.y = 0.05;
-    thumb =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                             new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-    hand.add(thumb);
-    thumb.position.x = 0.2;
-    thumb.rotation.z = 2.0;
-
-
-    indexfinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                   new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-    hand.add(indexfinger);
-    indexfinger.position.x = 0.10;
-    indexfinger.position.y = 0.2;
-
-
-    middlefinger =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                    new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-    hand.add(middlefinger);
-    middlefinger.position.x = 0.0;
-    middlefinger.position.y = 0.2;
-
-    pinky =  new THREE.Mesh( new THREE.CubeGeometry(0.05,0.25,0.05),
-                                    new THREE.MeshLambertMaterial({ color: 0xFFAAAA, transparent: true}));
-    hand.add(pinky);
-    pinky.position.x = -0.1;
-    pinky.position.y = 0.2;
-}
 
 var angle = 0.0;
 var movement = 0.0;
@@ -396,6 +355,10 @@ function update(){
     spotLight.target.position = dirW;
     
     bonfire.updateBonfireParticles();
+    if(skySphereMesh){
+        skySphereMesh.rotation.y += Math.PI/7200;
+    }
+    
     // request another frame update
     requestAnimationFrame(update);
     
@@ -512,7 +475,7 @@ function Bonfire(properties){
          size : 3
      });
      this.smokeSystem = new THREE.ParticleSystem(this.smokeParticles, this.smokeMaterial);
-     //this.smokeSystem.renderDepth = 1;
+     this.smokeSystem.renderDepth = 0;
      this.smokeSystem.sortParticles = false;
      //no particles available by default
      this.smokeSystem.geometry.__webglParticleCount = 0;
@@ -537,7 +500,7 @@ function Bonfire(properties){
          size : 1
      });
      this.fireSystem = new THREE.ParticleSystem(this.fireParticles, this.fireMaterial);
-     //this.fireSystem.renderDepth = 1;
+     this.fireSystem.renderDepth = 0;
      this.fireSystem.sortParticles = false;
      //no particles available by default
      this.fireSystem.geometry.__webglParticleCount = 0;
@@ -650,18 +613,19 @@ function Tree(type){
     this.image.flipY = false;
     this.planes = [];
     for(var i = 0; i < 2; i++){
-        this.planes[i] = new THREE.Mesh(
+        this.planes.push(new THREE.Mesh(
                 new THREE.PlaneGeometry(5, 5),
                 new THREE.MeshPhongMaterial({
                     map : this.image,
                     transparent : true,
                     side : THREE.DoubleSide,
-                    depthWrite : false,
-                    depthTestw : true
-                })
-        );
+                    depthWrite : true,
+                    depthTest : true,
+                    blending: THREE.NormalBlending,
+                    alphaTest : 0.6
+        })));
         this.treeObject.add(this.planes[i]);
-        //this.planes[i].renderDepth = 1;
+        this.planes[i].renderDepth = 0;
     }
     this.planes[0].rotation.y = Math.PI/2;
     this.treeObject.position.y = 2.5;
