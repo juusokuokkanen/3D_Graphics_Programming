@@ -242,7 +242,7 @@ $(function(){
 
     //CREATE BONFIRE
     bonfire = new Bonfire({
-        bonfirePosition : new THREE.Vector3(0, 0, 0),
+        bonfirePosition : new THREE.Vector3(1, 0, 5),
         
         //smoke
         smokeVelocity : new THREE.Vector3(0.1, 0.5, 0),
@@ -258,7 +258,7 @@ $(function(){
         fireEnergyDrain : 150,
         fireMaxParticles : 4,
         //smoke particles per second
-        fireFrequency : 5
+        fireFrequency : 4
     });
     bonfire.initSmokeParticles(1);
     scene.add(bonfire.smokeSystem);
@@ -332,16 +332,6 @@ function update(){
 	camObject.translate(-0.1, dirW);
 	moving = true;
     }
-    if ( keysPressed["Q".charCodeAt(0)] == true ){
-
-	shoulderRotationJoint.rotation.y += 0.1;
-
-    }
-    if ( keysPressed["E".charCodeAt(0)] == true ){
-
-	shoulderRotationJoint.rotation.y -= 0.1;
-
-    }
     // so strafing and moving back-fourth does not double the bounce
     if ( moving ) {
 	movement+=0.1;
@@ -356,7 +346,7 @@ function update(){
     
     bonfire.updateBonfireParticles();
     if(skySphereMesh){
-        skySphereMesh.rotation.y += Math.PI/7200;
+        skySphereMesh.rotation.y += Math.PI/3600;
     }
     
     // request another frame update
@@ -468,7 +458,7 @@ function Bonfire(properties){
          map : THREE.ImageUtils.loadTexture("smoke.png"),
          transparent: true,
          depthWrite : false,
-         blending: THREE.AdditiveBlending,
+         blending: THREE.CustomBlending,
          blendingEquation: THREE.AddEquation,
          blendSrc : THREE.SrcAlphaFactor,
          blendDst : THREE.OneFactor,
@@ -512,7 +502,6 @@ function Bonfire(properties){
          nextAlive = (nextAlive > this.smokeMaxParticles) ? this.smokeMaxParticles : nextAlive;
          for(var i = currentAlive; i < nextAlive; i++){
              this.smokeParticles.vertices[i].set(0,0,0);
-             this.smokeParticles.vertices[i].creation = Date.now();
              this.smokeParticles.vertices[i].energy = this.properties.smokeEnergy;
              this.smokeParticlesAlive++;
          }
@@ -526,7 +515,6 @@ function Bonfire(properties){
          nextAlive = (nextAlive > this.fireMaxParticles) ? this.fireMaxParticles : nextAlive;
          for(var i = currentAlive; i < nextAlive; i++){
              this.fireParticles.vertices[i].set(0,0,0);
-             this.fireParticles.vertices[i].creation = Date.now();
              this.fireParticles.vertices[i].energy = this.properties.fireEnergy;
              this.fireParticlesAlive++;
          }
@@ -600,6 +588,7 @@ function Bonfire(properties){
          this.smokeSystem.position.y = y;
          this.smokeSystem.position.z = z;
      }
+     this.setPosition(this.properties.bonfirePosition.x, this.properties.bonfirePosition.y, this.properties.bonfirePosition.z);
 };
 
 function Tree(type){
